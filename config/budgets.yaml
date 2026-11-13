@@ -1,0 +1,20 @@
+# Run budgets and retry policy. Owner: platform teammate.
+# BudgetGuard checks these before every LLM call and every expensive stage; on
+# exhaustion the run is paused with status budget_exhausted and can be resumed after
+# the limits (or the run) are adjusted.
+
+run:
+  max_wall_seconds: 900
+  max_llm_calls: 40
+  max_tokens_total: 200000
+  max_cost_usd: 0.0          # local Ollama is free; remote backends must price tokens
+  max_retries_per_step: 3
+  retry_backoff_seconds: [1.0, 2.0, 4.0]
+  retry_jitter_fraction: 0.2
+  max_revision_rounds: 2
+  stage_default_timeout_s: 600
+
+llm:
+  # Example prices for the OpenAI-compatible backend; unused by the local model.
+  price_per_1k_input_usd: 0.0
+  price_per_1k_output_usd: 0.0

@@ -1,0 +1,154 @@
+# Workflow DAG, stage budgets and human gates.
+# Owner: platform teammate. The controller treats this file as the single source of
+# truth for stage order, dependencies, retry limits and which stages are agent-driven.
+
+workflow:
+  name: index_enhancement_research
+  version: "1.0.0"
+  description: >-
+    Monthly multi-factor CSI 300 index-enhancement research: hypothesis, data
+    preparation, factor construction, backtest, robustness, portfolio construction,
+    independent verification, research note, human approval and version registry.
+
+  execution:
+    # The runner walks stages in topological order of the list; equal-rank stages
+    # keep this order, which keeps runs deterministic.
+    mode: deterministic_topological
+    stop_on_first_failure: true
+
+  stages:
+    - name: intake
+      handler: intake
+      needs: []
+      timeout_s: 60
+      retries: 0
+      produces: [run_request.json]
+
+    - name: hypothesis
+      handler: hypothesis
+      needs: [intake]
+      timeout_s: 420
+      retries: 2
+      produces: [hypothesis.json, rationale.md]
+      agent:
+        role: researcher
+        prompt: prompts/researcher.md
+        skill: skills/hypothesis_spec/SKILL.md
+        schema: aicwf/schemas/hypothesis.schema.json
+        max_tokens: 1800
+
+    - name: data_prep
+      handler: data_prep
+      needs: [intake]
+      timeout_s: 600
+      retries: 1
+      produces: [panel.parquet, benchmark.parquet, data_quality.json, pit_audit.json]
+
+    - name: factor_build
+      handler: factor_build
+      needs: [hypothesis, data_prep]
+      timeout_s: 300
+      retries: 1
+      produces: [factor_panel.parquet, factor_report.json]
+
+    - name: factor_review
+      handler: factor_review
+      needs: [factor_build]
+      timeout_s: 420
+      retries: 2
+      produces: [assessment.md, flags.json]
+      agent:
+        role: factor_analyst
+        prompt: prompts/factor_analyst.md
+        skill: skills/factor_diagnostics/SKILL.md
+        schema: aicwf/schemas/factor_flags.schema.json
+        max_tokens: 1400
+
+    - name: backtest
+      handler: backtest
+      needs: [hypothesis, factor_build]
+      timeout_s: 600
+      retries: 0
+      produces: [ledger.parquet, holdings.parquet, metrics.json, equity_curve.csv]
+
+    - name: robustness
+      handler: robustness
+      needs: [backtest]
+      timeout_s: 900
+      retries: 0
+      produces: [robustness.json, robustness_checks.json]
+
+    - name: robustness_review
+      handler: robustness_review
+      needs: [backtest, robustness]
+      timeout_s: 420
+      retries: 2
+      produces: [critique.md]
+      agent:
+        role: risk_critic
+        prompt: prompts/risk_critic.md
+        skill: skills/risk_review/SKILL.md
+        schema: null
+        max_tokens: 1600
+
+    - name: portfolio
+      handler: portfolio
+      needs: [factor_build, backtest]
+      timeout_s: 300
+      retries: 0
+      produces: [target_weights.parquet, orders.csv, risk_report.json]
+
+    - name: verification
+      handler: verification
+      needs: [data_prep, backtest, robustness, portfolio]
+      timeout_s: 420
+      retries: 0
+      produces: [verification.json, verifier_note.md]
+      agent:
+        role: verifier
+        prompt: prompts/verifier.md
+        skill: skills/pit_and_cutoff/SKILL.md
+        schema: aicwf/schemas/verification.schema.json
+        max_tokens: 1200
+
+    - name: report
+      handler: report
+      needs: [verification, backtest, robustness, portfolio]
+      timeout_s: 600
+      retries: 2
+      produces: [research_note.md, metrics_table.md, charts]
+      agent:
+        role: report_writer
+        prompt: prompts/report_writer.md
+        skill: skills/report_template/SKILL.md
+        schema: null
+        max_tokens: 2200
+
+    - name: approval
+      handler: approval
+      needs: [report]
+      timeout_s: 60
+      retries: 0
+      human_gate: true
+      produces: [approval.json]
+
+    - name: registry
+      handler: registry
+      needs: [approval]
+      timeout_s: 120
+      retries: 0
+      human_gate: true
+      produces: [version_entry.json]
+
+  triggers:
+    monthly:
+      cron: "0 18 1 * *"
+      timezone: Asia/Shanghai
+      command: "python -m aicwf monitor --as-of <latest-trading-day>"
+      note: >-
+        Installed through scripts/scheduled_monitor.ps1 (Windows Task Scheduler) or
+        cron. The controller also accepts --trigger new-data, which compares the
+        latest snapshot hash with the last monitor run.
+    new_data:
+      watch: data/snapshots/*/manifest.json
+      mode: hash_change

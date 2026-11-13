@@ -1,0 +1,53 @@
+# Public data-source configuration. Owner: marketdata teammate.
+# All sources are free, token-less HTTP endpoints. The snapshot builder retries
+# transient failures and records provenance in manifest.json.
+
+sources:
+  eastmoney:
+    hosts:
+      - push2.eastmoney.com
+      - 82.push2.eastmoney.com
+      - 1.push2.eastmoney.com
+    kline_url: "https://{host}/api/qt/stock/kline/get"
+    list_url: "https://{host}/api/qt/clist/get"
+    datacenter_url: "https://datacenter-web.eastmoney.com/api/data/v1/get"
+    index_secid: "1.000300"
+    csi300_board: "b:BK0500"
+    page_size: 100
+    timeout_s: 20
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AICWF academic research"
+    retry:
+      attempts: 4
+      backoff_seconds: [0.5, 1.0, 2.0, 4.0]
+      jitter_fraction: 0.3
+    polite_delay_seconds: 0.15
+
+  fundamentals:
+    report: RPT_F10_FINANCE_MAINFINADATA
+    page_size: 60
+    fields:
+      - SECUCODE
+      - REPORT_DATE
+      - NOTICE_DATE
+      - EPSJB
+      - BPS
+      - TOTALOPERATEREVE
+      - PARENTNETPROFIT
+      - TOTALOPERATEREVETZ
+      - PARENTNETPROFITTZ
+      - MLR
+      - MGJYXJJE
+
+snapshot:
+  root: data/snapshots
+  schema_version: "1.1.0"
+  max_price_lookback_days: 4200
+  min_universe_size: 250
+  keep_raw_downloads: false
+
+quality:
+  max_missing_price_ratio: 0.10
+  max_stale_trading_days: 5
+  min_fundamental_coverage: 0.85
+  duplicate_rows_allowed: false
+  require_positive_prices: true

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aicwf"
+version = "1.0.0"
+description = "Long-running multi-factor index-enhancement research workflow with agent roles, checkpoints, independent verification and version rollback."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "pandas>=2.0",
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "scikit-learn>=1.3",
+  "pyarrow>=14.0",
+  "matplotlib>=3.7",
+  "PyYAML>=6.0",
+  "requests>=2.31",
+  "jsonschema>=4.18",
+]
+
+[project.scripts]
+aicwf = "aicwf.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["aicwf*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "slow: tests that run a full backtest or real-model call",
+  "network: tests that touch public data sources (skipped by default)",
+]

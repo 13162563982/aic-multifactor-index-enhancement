@@ -1,0 +1,54 @@
+# Verification thresholds, approval gates and change-control tolerances.
+# Owner: verification teammate; the controller enforces the approval block.
+
+verification:
+  tolerances:
+    metrics_relative: 1.0e-6
+    weights_absolute: 1.0e-6
+    cash_absolute: 0.01
+  required_checks:
+    - artifact_schema
+    - artifact_hashes
+    - ledger_reconcile
+    - weights_bounds
+    - industry_neutrality
+    - forbidden_securities
+    - pit_fundamentals
+    - pit_prices
+    - determinism_summary
+  max_revision_rounds: 2
+  escalate_after_revisions: true
+
+approval:
+  required: true
+  actions:
+    - publish_report
+    - promote_version
+    - export_orders
+  default_approver: "Zhengjia Zhu"
+  # A hash of the approval package is recorded; if verified artifacts change after
+  # approval the gate must be granted again.
+  bind_to_artifact_hashes: true
+
+leakage:
+  assert_max_panel_date_le_as_of: true
+  future_perturbation_test: true
+  require_prompt_cutoff: true
+
+change_control:
+  # Soft tolerances for accepting a candidate change against the frozen baseline.
+  metric_acceptance:
+    annualized_excess_return_max_degradation: 0.005
+    information_ratio_max_degradation: 0.10
+    tracking_error_abs_tolerance: 0.01
+    max_drawdown_max_degradation: 0.02
+    turnover_max_increase: 0.10
+  hard_gates:
+    - leakage_tests_pass
+    - verification_passes
+    - deterministic_replay
+    - budget_within_limit
+  registry:
+    versions_file: registry/versions.json
+    releases_dir: registry/releases
+    require_git_clean: true

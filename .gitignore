@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Test / lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Secrets and local environment
+.env
+.env.local
+
+# Generated run state (curated copies live under examples/ and evidence/)
+outputs/runs/
+outputs/monitor/
+state/
+runs/
+
+# Temporary snapshot downloads
+data/snapshots/*/tmp/
+data/snapshots/*/_raw/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

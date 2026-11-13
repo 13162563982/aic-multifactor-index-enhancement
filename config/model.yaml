@@ -1,0 +1,32 @@
+# LLM backend configuration. Owner: agent-runtime teammate.
+# Default is the local Ollama server with Qwen3.5 9B (Q4_K_M). No API key is
+# required, and no key may ever be committed to this repository.
+
+default:
+  backend: ollama
+  model: qwen3.5:9b
+  base_url: http://127.0.0.1:11434
+  temperature: 0.1
+  top_p: 0.9
+  max_tokens: 1600
+  num_ctx: 8192
+  timeout_s: 180
+  think: false
+  format_json: true
+  keep_alive: "10m"
+
+replay:
+  cache_dir: evidence/llm_cache
+  # Replay must be strict: unseen prompts fail instead of silently calling a model.
+  strict: true
+
+openai_compat:
+  base_url: ""
+  api_key_env: AICWF_LLM_API_KEY
+  model: ""
+  timeout_s: 120
+
+agent_loop:
+  max_tool_rounds: 3
+  max_retries_invalid_json: 2
+  repair_temperature: 0.0
