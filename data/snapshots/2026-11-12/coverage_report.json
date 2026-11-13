@@ -1,0 +1,18 @@
+{
+  "as_of": "2026-11-12",
+  "augmentation": "fallback builder's Sina constituent table returned 300 rows but only 289 unique codes; the missing official CSI 300 names were fetched from the CSIndex official constituent list plus Sina qfq prices and Eastmoney data-centre fundamentals/industry",
+  "augmented_codes": [],
+  "augmented_count": 0,
+  "board_values": "lowercase main/chinext/star/bse",
+  "board_values_normalised": true,
+  "coverage": 1.0,
+  "covered_names": 300,
+  "failures": [],
+  "fundamentals_ok": 300,
+  "names_with_fundamentals": 289,
+  "priced_names": 300,
+  "provider": "sina_prices_akshare+eastmoney_datacenter_fundamentals",
+  "requested_names": 300,
+  "turnover_units": "ratio volume/outstanding_share (multiply by 100 for percent)",
+  "volume_units": "shares (Sina stock_zh_a_daily)"
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.1.0",
+  "as_of": "2026-11-12",
+  "created_at_utc": "2026-11-13T03:23:23+00:00",
+  "source_urls": {
+    "constituents": "https://finance.sina.com.cn (akshare index_stock_cons 000300)",
+    "prices": "https://finance.sina.com.cn (akshare stock_zh_a_daily qfq)",
+    "fundamentals": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA",
+    "industry": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_INDEX_TS_COMPONENT",
+    "benchmark": "https://finance.sina.com.cn (akshare stock_zh_index_daily sh000300)",
+    "constituents_official": "https://www.csindex.com.cn (akshare index_stock_cons_csindex 000300)"
+  },
+  "row_counts": {
+    "prices": 703567,
+    "fundamentals": 16583,
+    "universe": 300,
+    "benchmark": 2637,
+    "calendar": 2637
+  },
+  "date_ranges": {
+    "prices": [
+      "2016-01-04",
+      "2026-11-12"
+    ],
+    "fundamentals": [
+      "1999-12-31",
+      "2026-09-30"
+    ],
+    "universe": [
+      "2016-01-04",
+      "2025-12-03"
+    ],
+    "benchmark": [
+      "2016-01-04",
+      "2026-11-12"
+    ],
+    "calendar": [
+      "2016-01-04",
+      "2026-11-12"
+    ]
+  },
+  "files": {
+    "benchmark.parquet": "0a32847f790a123b63e0fc6d072f49ea7c64c8ce9eec2ee9a511506ee6dfc296",
+    "calendar.parquet": "24297480814ce6eda95b142be25b4bffbb21c6992a05d59ab03a472e003f3c33",
+    "coverage_report.json": "c530040990b166e2a027ce032f22baed974dac977533147c14c1c4b858d1a707",
+    "fundamentals.parquet": "55bee9e018bd3863eeb233f923978d7d05629e8a5343548abb25a5c3ba7375d7",
+    "prices.parquet": "ba12e5c6c19eac23cfefbd06e585de4de46e15a53d8283af7f220835cfc05316",
+    "universe.parquet": "5bbf27efea8083b496698a9560b0aa7d569732960a4735cc064fdc99726432f4"
+  },
+  "content_hashes": {
+    "benchmark.parquet": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+    "calendar.parquet": "238c32793673b2eebe3905a39829183591cdd3f3e8cdf75c35684d2dbd5cca19",
+    "coverage_report.json": "0eddc654eaf16d5016a3f788e7a0e12610bccc6c7a0687231acbb76d75ed5441",
+    "fundamentals.parquet": "2299d9b1ec4579aaecfbecde2845f3473d563979cda2ccf43aec5bdc1e3ea718",
+    "prices.parquet": "e89c3162920c9ef2d3953d14b220b81d24349e0b8f378b699816158fbab42df6",
+    "universe.parquet": "6a67bea754d53f85f9a774942f0e70a20affbc63cde72ca99682548882a9d8a8"
+  },
+  "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+  "notes": [
+    "Fallback builder: prices and constituents from Sina via akshare; fundamentals and industry from Eastmoney data centre.",
+    "Benchmark weights are a free-float (outstanding-share) proxy, not the official CSI 300 weights.",
+    "Current-constituent universe: survivorship and reconstitution bias documented in data/README.md.",
+    "Augmented with 11 official CSI 300 constituents missing from the fallback Sina constituent list; instrument/sector data from the working Eastmoney data centre.",
+    "Board values normalised to the documented lowercase set {main, chinext, star, bse}."
+  ],
+  "provenance": {
+    "augmented_at_utc": "2026-11-13T03:26:51+00:00",
+    "augmented_codes": [],
+    "augmentation_source": "CSIndex official constituent list + Sina qfq prices + Eastmoney datacenter fundamentals/industry",
+    "board_normalisation": "lowercase main/chinext/star/bse"
+  }
+}
