@@ -1,0 +1,265 @@
+# Design note: a long-running agent workflow for multi-factor CSI 300 index enhancement
+
+**Author:** Zhengjia Zhu (25210660121) · **Course:** AI Coding in Finance, Fall 2026
+**Repository:** https://github.com/13162563982/aic-multifactor-index-enhancement
+
+---
+
+## 1. The task and the user
+
+### 1.1 Intended user and work product
+
+The intended user is a quantitative analyst on a China long-only index-enhancement desk at a
+buy-side fund. The desk runs a CSI 300 enhanced-index product: it holds a portfolio that tracks
+the CSI 300 closely enough to stay inside a tracking-error mandate, while tilting toward
+compensated factors to earn a modest, repeatable excess return. The analyst's monthly job is to
+decide the next target portfolio, justify it to an investment committee, and then monitor the
+product until the next rebalance.
+
+The recurring work product is a **monthly research and rebalancing package**:
+
+1. a written research note with the hypothesis, factor evidence, backtest and robustness results;
+2. a target-weight file and the associated order list, checked against liquidity and
+   participation constraints;
+3. an independent verification report that recomputes the numbers from the trade ledger;
+4. a recorded human approval;
+5. a versioned release entry that can be rolled back;
+6. a monthly monitoring report that compares realised performance with the tracking-error
+   target and flags factor or data drift.
+
+The task is representative of buy-side quantitative research: hypothesis development, data
+preparation, factor construction, backtesting, robustness checks, portfolio construction and
+ongoing monitoring (the project brief lists exactly these stages). It is substantial — roughly
+300 securities, 8.8 years of daily data, ~95 monthly rebalances and 13 candidate factors — and
+it is genuinely repetitive: the same pipeline must run every month with new data, and the same
+code must support ad-hoc research questions in between.
+
+### 1.2 The current manual process
+
+Today the analyst does the following, mostly by hand:
+
+* **Data.** Downloads index composition, daily bars and financial statements from a free data
+  portal into spreadsheets, pastes them into a research script, and manually reconciles field
+  renames, stock-code changes and missing announcements. A single vendor field change can
+  silently shift results by days of debugging.
+* **Hypothesis and factor work.** Writes ad-hoc Jupyter notebooks. Factor definitions live in
+  several notebooks, so the same "value" factor may be computed three slightly different ways
+  across a quarter.
+* **Backtest.** Runs a local script that is edited between runs. Results are pasted into slides.
+  There is no fixed baseline, so a "better" result may simply reflect a different universe,
+  cost assumption or date range.
+* **Portfolio construction.** Solves a rough optimisation by hand-editing a target-weight
+  spreadsheet: cap large names, zero out a few industries, adjust turnover. Constraint
+  violations are found by inspection, not by code.
+* **Verification and approval.** A senior colleague checks the numbers in a meeting. There is no
+  independent recomputation, and the approval is an email thread. Nobody can prove afterwards
+  which code and data produced an approved weight file.
+* **Monitoring.** The analyst compares the product with the benchmark manually each month; the
+  comparison is not linked to the approved portfolio, so attribution and drift analysis are
+  re-done from scratch.
+* **Interruptions.** When the laptop sleeps, the VPN drops or the data portal rate-limits, the
+  script restarts from the beginning; the analyst has to remember which steps were already
+  completed and whether partial outputs were overwritten.
+
+The costs are concrete: about 3–5 analyst-days per month, repeated manual work, results that
+cannot be reproduced six months later, no auditable trail from data to approved portfolio, and
+no consistent defence against look-ahead bias when a new idea is tested. The desk also cannot
+answer the investment committee's most basic question — "what exactly changed since the last
+approved version, and did it help against a fixed baseline?" — without a week of archaeology.
+
+### 1.3 Why this needs a persistent workflow, not a one-shot script
+
+A single long prompt or a monolithic script cannot satisfy the task for five reasons.
+
+1. **The task recurs with new inputs.** Each month brings a new trading day, new announcements
+   and a new benchmark close. State must persist across months (previous holdings, last
+   approved version, monitoring history, which data snapshot was used), or every run starts
+   from zero and cannot compute turnover, tracking difference or drift.
+2. **Different stages need different kinds of execution.** Numerical work — data cleaning,
+   factor construction, backtesting, portfolio optimisation, verification — must be
+   deterministic, testable and fast. Open-ended work — forming a hypothesis, interpreting weak
+   evidence, writing the note, arguing against your own result — benefits from a language
+   model. Mixing them in one prompt produces unverifiable numbers; separating them requires an
+   orchestration layer that hands off typed artifacts.
+3. **Change control requires a fixed baseline.** The desk proposes changes (a new factor
+   definition, a different tracking-error target, a revised prompt). To accept or reject a
+   change, the candidate must be evaluated against a frozen baseline on the same data and
+   compared with a pre-registered tolerance. That is only possible if runs, configs, prompt
+   versions and metrics are recorded and versioned.
+4. **Failures are normal.** Free data endpoints rate-limit and disconnect; the local model
+   server is sometimes down; a run can be interrupted at any point. A workflow needs
+   checkpoints, idempotent steps, bounded retries, escalation rules and a resume path that
+   provably does not repeat completed work or duplicate trades.
+5. **Consequential actions need human gates and independent checks.** Publishing a research
+   note, promoting a strategy version or exporting an order list are consequential. They must
+   be blocked until a human approves them, and the numbers behind them must be recomputed by
+   code that is independent of the code that produced them.
+
+The workflow in this repository therefore treats the monthly package as a **long-running
+research process** with persistent state, reproducible artifacts, independent verification,
+human approval and monthly monitoring — not as a prompt.
+
+---
+
+## 2. Task specification
+
+### 2.1 Stages, owners and artifacts
+
+The workflow has thirteen stages. "Owner" distinguishes deterministic Python from LLM-agent
+work; every stage is executed by the harness, and the LLM never controls execution.
+
+| # | Stage | Owner | Purpose | Key outputs |
+|---|-------|-------|---------|-------------|
+| 01 | Intake | deterministic | Validate configuration and workflow DAG; pin the frozen snapshot; record provenance and information cutoff | `run_request.json` |
+| 02 | Hypothesis | Researcher agent | Propose a falsifiable factor hypothesis with weights, constraints and a cutoff, validated against a JSON schema and the factor catalogue | `hypothesis.json`, `rationale.md` |
+| 03 | Data preparation | deterministic | Enforce the as-of cutoff, build the point-in-time panel, run quality gates, audit announcement dates | `panel.parquet`, `benchmark.parquet`, `data_quality.json`, `pit_audit.json` |
+| 04 | Factor build | deterministic | Compute 13 raw factors, winsorise, rank-standardise, neutralise industry and size, build the composite score | `factor_panel.parquet`, `factor_report.json` |
+| 05 | Factor review | Factor-analyst agent | Read diagnostics, flag low coverage, collinearity, instability; advisory only | `assessment.md`, `flags.json` |
+| 06 | Backtest | deterministic | Monthly rebalance, T+1 execution, costs, ledger, holdings, performance and benchmark metrics | `ledger.parquet`, `holdings.parquet`, `metrics.json`, `equity_curve.csv` |
+| 07 | Robustness | deterministic | Sub-periods, cost sensitivity, leave-one-factor-out, parameter grid, seeded placebo, survivorship stress, deflated Sharpe ratio | `robustness.json`, `robustness_checks.json` |
+| 08 | Risk critique | Risk-critic agent | Argue against the result with concrete evidence; advisory only | `critique.md` |
+| 09 | Portfolio construction | deterministic | Industry-neutral, tracking-error-constrained optimisation, turnover cap, deterministic fallback, orders | `target_weights.parquet`, `orders.csv`, `risk_report.json` |
+| 10 | Verification | independent deterministic code + Verifier agent | Recompute NAV, benchmark and metrics from the ledger and raw data; check bounds, neutrality, PIT, hashes; PASS/FAIL | `verification.json`, `verifier_note.md` |
+| 11 | Report | Report-writer agent + deterministic charts | Write the research note from verified numbers only; charts produced by code | `research_note.md`, `metrics_table.md`, `charts/*.png` |
+| 12 | Approval | human gate | Block publication/promotion/order export until an approval artifact is recorded | `approval.json` |
+| 13 | Registry | deterministic | Append an immutable version entry with config, prompt and data hashes, metrics, verdict and approval | `version_entry.json`, `registry/versions.json` |
+| 14 | Monitoring (separate trigger) | deterministic + agent summary | Track realised tracking error, factor drift, data freshness; stop rules and alerts | `monitoring.json`, `monitoring_report.md` |
+
+### 2.2 Dependencies and parallelism
+
+The dependency graph is fixed in `config/workflow.yaml` and validated at intake. The critical
+path is `intake → hypothesis → data_prep → factor_build → backtest → robustness → portfolio →
+verification → report → approval → registry`. The two advisory agent stages depend on the
+deterministic stage they interpret and cannot block downstream computation. The report is only
+released after verification; the registry entry only after human approval. Monitoring is an
+independent monthly pipeline that reads the latest snapshot and the last approved version.
+
+The runner executes stages in a deterministic topological order, which is sufficient for this
+workload: the expensive steps (backtest, robustness) dominate, and reproducibility is worth more
+than squeezing out parallelism. The design keeps stage boundaries clean so that independent
+stages could be run in parallel later.
+
+### 2.3 Triggers
+
+* **Monthly schedule** — the production trigger, configured as `0 18 1 * *` in Asia/Shanghai,
+  implemented through `scripts/scheduled_monitor.ps1` (Windows Task Scheduler) or cron. The
+  message is a reminder to run the monitoring stage with the latest trading day; the domain
+  calendar decides the actual rebalance day.
+* **New-data trigger** — after a snapshot is refreshed, the harness compares the new
+  `snapshot_hash` with the last monitored snapshot and starts a monitoring run (and, on a
+  rebalance month, a full research run).
+* **Manual research trigger** — an analyst runs `python -m aicwf run --as-of <date>` for an
+  ad-hoc question, including `--as-of` dates in the past for walk-forward experiments.
+
+### 2.4 Inputs and permitted sources
+
+Runtime inputs are restricted to the repository: the frozen data snapshot, the configuration
+bundle, the role prompts and skills, and artifacts from earlier runs in the same run directory.
+The snapshot is built once by `scripts/build_snapshot.py` from free, token-less public endpoints
+(Eastmoney for CSI 300 composition, daily adjusted bars, financial statements and industry
+classifications). During a research run, **no agent and no stage may access the internet**, and
+no credentials are required.
+
+This separation matters for auditability: the data used by a run is identified by a SHA-256
+manifest, not by "whatever the vendor returned at 9am". Rebuilding the snapshot is a deliberate,
+separately verified action.
+
+### 2.5 Information cutoffs and leakage control
+
+* The run has a single `as_of` date, equal to the snapshot's as-of date.
+* Every panel row must have `date <= as_of`; the data stage rejects and reports anything later.
+* Fundamental values become usable only on their announcement date (`notice_date <= decision
+  date`). When the vendor omits an announcement date, the workflow falls back to
+  `report_date + 90 days` and flags the row as estimated.
+* Signals are computed from month-end data and executed at the next close; the backtest never
+  uses a signal and a return from the same date.
+* Prompts state the cutoff explicitly and forbid using later information.
+* Verification includes a future-perturbation test: replacing all data after `as_of` with
+  random values must leave every reported metric and artifact hash unchanged.
+
+### 2.6 Work products and acceptance criteria
+
+A run is acceptable only if all of the following hold:
+
+| Criterion | Threshold / evidence |
+|---|---|
+| Independent verification | `verification.json` verdict `PASS`; every required check `pass` |
+| Metric reconciliation | Verifier recomputation matches reported metrics within 1e-6 relative tolerance |
+| Portfolio constraints | Long-only, fully invested, per-name and active caps respected, industry active exposure ≈ 0, turnover ≤ limit |
+| Tracking error | Realised/backtest tracking error within ±1% of the 5% target; ex-ante TE reported |
+| Leakage | Future-perturbation and PIT checks pass; no row after `as_of` |
+| Reproducibility | Same run id + snapshot + config + replay cache → identical artifact content hashes |
+| Robustness | Report includes sub-periods, cost sensitivity, leave-one-out, placebo and bias-stress results; concerns are visible, not hidden |
+| Cost and time | Run completes within the 900 s / 40 LLM calls / 200k token budget |
+| Human approval | `approval.json` records approver, action, scope and artifact hashes before promotion or publication |
+| Versioning | Registry entry records commit, config and prompt hashes, metrics, verdict and previous version; rollback is testable |
+
+Monitoring runs have their own criteria: realised tracking error, tracking difference, factor
+RankIC drift, data freshness and coverage are computed against the approved portfolio; a
+breach raises an alert, and two consecutive months beyond twice the TE target stop new
+rebalances until a human reviews the product.
+
+### 2.7 What is deliberately out of scope
+
+The project does not place orders or connect to a broker, does not consume real-time data,
+does not train models, and does not claim production readiness. The data snapshot is for
+academic reproduction only. The local 9B model is used for hypothesis, interpretation and
+narrative text; every number in the package is computed by deterministic code and independently
+recomputed.
+
+---
+
+## 3. Architecture
+
+### 3.1 The picture
+
+![Annotated workflow](architecture.png)
+
+The annotated diagram (also available as `architecture.svg`; the state machine is in
+`recovery_state.png`) has three layers.
+
+* **Left: control plane.** The deterministic harness owns scheduling and new-data triggers,
+  persistent state (SQLite), budgets and failure policy, the human approval gate, the version
+  registry, and recovery. Nothing here is decided by a language model.
+* **Middle: the stage DAG.** Blue boxes are deterministic Python; amber boxes are LLM-agent
+  stages; the red box is the human gate; green is the independent monitoring run. Each box
+  names the artifacts it writes, and each arrow is a typed handoff.
+* **Bottom: the information firewall.** Every stage sees only data with `date <= as_of`, and
+  the future-perturbation test proves it.
+
+### 3.2 Roles and handoffs
+
+| Role | Responsibility | Tools (mediated by the harness) | Input artifacts | Output artifacts | Why this role exists |
+|---|---|---|---|---|---|
+| Controller | Validate DAG, schedule stages, checkpoint, enforce budgets, retry, gate, record events | Its own deterministic code; no LLM | config, run request, state DB | state, events, escalation records | Execution control must be deterministic and auditable |
+| Researcher agent | Propose a falsifiable hypothesis, factor weights, constraints, falsification tests and cutoff | `read_artifact`, `read_skill`, `submit_json` | config, factor catalogue, data summary, prior results | `hypothesis.json`, `rationale.md` | Hypothesis formation is open-ended; a schema keeps it bounded |
+| Data steward (code) | Download once at build time; at run time enforce cutoff, quality gates, PIT rules | pandas/pyarrow | snapshot, config | panel, benchmark, quality, PIT audit | Data errors are the largest source of silent research failure |
+| Factor analyst agent | Interpret coverage, IC, collinearity and stability; raise flags | `read_artifact`, `run_check` (whitelisted), `submit_json` | factor report, panel summary | `assessment.md`, `flags.json` | Diagnostics are numerous; narrative triage helps a human |
+| Quant engine (code) | Factor computation, backtest, robustness, optimisation, metrics | pandas/numpy/scipy/sklearn | panel, hypothesis, config | factor panel, ledger, metrics, weights, orders | Numbers must be deterministic, fast and testable |
+| Risk critic agent | Argue against the result; name concrete failure modes | `read_artifact` | robustness, metrics, critique history | `critique.md` | Adversarial review reduces confirmation bias |
+| Independent verifier (code + agent) | Recompute and check; verdict PASS/FAIL; write the note | separate code path, read-only | ledger, panel, metrics, orders | `verification.json`, `verifier_note.md` | Producer and checker must not share code or trust |
+| Report writer agent | Turn verified numbers into a committee-ready note | `read_artifact`, `submit_markdown` | verification, metrics, robustness, charts | `research_note.md`, tables | Writing is open-ended; the numbers are fixed upstream |
+| Human approver | Approve publish/promote/export | CLI `aicwf approve` | approval package | `approval.json` | Consequential actions require accountability |
+| Registry (code) | Record version, compare with baseline, support rollback | deterministic | approval, metrics, config/prompt hashes | version entries, releases | Change control must be immutable and reversible |
+
+### 3.3 Agent decisions versus execution control
+
+The division is deliberate and enforced by code, not by convention.
+
+* **Agent decisions:** what hypothesis to test; how to interpret weak or conflicting factor
+  evidence; which risks to emphasise; how to narrate the result. Agent outputs are typed,
+  schema-validated artifacts, and failures trigger a bounded repair loop rather than a retry of
+  the whole run.
+* **Execution control:** which stage runs next, whether a step is retried, when a run pauses
+  for budget or approval, when a verification failure escalates, which version is promoted or
+  rolled back. These are deterministic rules in the controller.
+* **Numeric authority:** every number that reaches the investment committee is produced by
+  deterministic code and re-derived by an independent verifier. Agents may quote only numbers
+  present in verified artifacts; the report prompt forbids inventing or transforming metrics.
+
+This asymmetry is the core safety property: the language model can change the *question* and
+the *narrative*, but it cannot change the *measurement* or approve its own output.
+
+---
+
+<!-- Sections 4-8 are completed after end-to-end integration and evidence generation. -->
