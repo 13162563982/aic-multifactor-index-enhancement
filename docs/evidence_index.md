@@ -21,6 +21,7 @@ snapshot `8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8`
 | E12 | Replay mode is deterministic | `evidence/reproducibility/`, `evidence/llm_cache/` | two replay runs, identical artifact hashes and pure cache hits (scope documented) |
 | E13 | The ZIP contains the complete `.git` history and is clean | `evidence/package_check.txt` | commit count, `git status --porcelain`, extracted import check |
 | E14 | The offline test suite is green | `evidence/test_run.txt` | pytest summary |
+| E15 | No credentials appear in the submitted files or the commit history | `evidence/secret_scan.txt` | working-tree findings 0, all Git objects scanned (including unreachable), verdict CLEAN; reproduce with `python scripts/scan_secrets.py` |
 
 ## Commands that regenerate the evidence
 

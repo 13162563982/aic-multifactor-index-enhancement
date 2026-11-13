@@ -481,6 +481,7 @@ unchanged. A leakage bug must therefore defeat all of these layers to reach the 
 | Monitoring enforces tracking-error and drift thresholds | `evidence/monitor/` (two monthly runs) |
 | Leakage is controlled, including a future-perturbation test | `tests/test_quant_leakage.py`, `tests/test_data_pit.py`, `evidence/leakage_test.txt` |
 | The ZIP contains the complete Git history | `evidence/package_check.txt` (extraction self-check) |
+| No credentials in files or history | `evidence/secret_scan.txt` (working tree plus every Git object, reproduced by `scripts/scan_secrets.py` and repeated by the packager) |
 
 The per-file map with issue references is maintained in `docs/evidence_index.md`.
 

@@ -182,6 +182,7 @@ post-`as_of` data with random values and asserts that every metric and artifact 
 | Monthly monitoring detects drift and enforces stop rules | `evidence/monitor/`, `outputs/monitor/monitor-2026-11-12/monitoring.json` |
 | The real local model is used, with deterministic replay afterwards | `evidence/llm_cache/`, `evidence/reproducibility/` |
 | The submitted ZIP contains the complete Git history | `evidence/package_check.txt` (extraction self-check) |
+| No credentials in the submitted files or the commit history | `evidence/secret_scan.txt` (re-run `scripts/scan_secrets.py`; every packaging build repeats the history scan) |
 
 `docs/evidence_index.md` lists every claim with the exact file and, where relevant, the line or
 JSON key to inspect.
