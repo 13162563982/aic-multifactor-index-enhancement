@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicwf.local/schemas/version.schema.json",
+  "title": "Registry version entry",
+  "description": "One entry appended to registry/versions.json by stage 12_registry. Entries are append-only: history is never rewritten.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "git_commit",
+    "config_hash",
+    "prompt_hashes",
+    "snapshot_hash",
+    "metrics",
+    "verification_verdict",
+    "approval",
+    "decision",
+    "previous_version"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "git_commit": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Commit hash recorded at release time; may be empty when git is unavailable."
+    },
+    "config_hash": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{64})?$"
+    },
+    "prompt_hashes": {
+      "type": "object",
+      "description": "Relative prompt/skill path -> sha256 content hash.",
+      "additionalProperties": {"type": "string"}
+    },
+    "snapshot_hash": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{64})?$"
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Key metrics of the released run. Numbers only: no wall-clock timestamps.",
+      "additionalProperties": true
+    },
+    "verification_verdict": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"]
+    },
+    "approval": {
+      "description": "The approval decision bound to the released artifacts, or a short summary string.",
+      "anyOf": [
+        {"type": "string", "minLength": 1, "maxLength": 200},
+        {"type": "object", "additionalProperties": true}
+      ]
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["accept", "reject", "rollback", "pending"]
+    },
+    "previous_version": {
+      "type": ["string", "null"],
+      "description": "Version this entry supersedes, or null for the first release."
+    },
+    "created_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional release wall-clock time; registry metadata only."
+    },
+    "rationale": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "artifact_hashes": {
+      "type": "object",
+      "description": "Optional sha256 map of the artifacts covered by the release.",
+      "additionalProperties": {"type": "string"}
+    }
+  }
+}

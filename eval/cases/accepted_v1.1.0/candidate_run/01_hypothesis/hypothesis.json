@@ -1,0 +1,23 @@
+{
+  "constraints": {
+    "max_active_weight": 0.05,
+    "max_weight": 0.1,
+    "te_target": 0.03,
+    "turnover_limit": 0.6
+  },
+  "factor_weights": {
+    "reversal_1m": 1.0
+  },
+  "falsification": [
+    "The realized annualized excess return is negative over the full sample.",
+    "The information ratio is below 0.0 after the configured costs.",
+    "Rank IC of the composite score is negative in a majority of subperiods."
+  ],
+  "information_cutoff": "2024-12-31",
+  "rebalance": "monthly",
+  "source_limits": [
+    "Frozen CSI 300 mini snapshot only; no network access after the freeze.",
+    "Signals only use prices observed on or before the decision date."
+  ],
+  "thesis": "A short-horizon reversal signal, after industry and liquidity screening, should earn a modest and persistent excess return over the CSI 300 while keeping tracking error near the 3% target and industry active weights inside +/-2%."
+}

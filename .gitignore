@@ -15,10 +15,13 @@ venv/
 .env.local
 
 # Generated run state (curated copies live under examples/ and evidence/)
-outputs/runs/
-outputs/monitor/
+outputs/*
+!outputs/.gitkeep
 state/
 runs/
+
+# Resumable raw-download cache for the snapshot builder
+data/cache/
 
 # Temporary snapshot downloads
 data/snapshots/*/tmp/

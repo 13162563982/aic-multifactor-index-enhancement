@@ -1,0 +1,156 @@
+{
+  "budgets": {
+    "run": {
+      "max_cost_usd": 0.0,
+      "max_llm_calls": 40,
+      "max_revision_rounds": 2,
+      "max_tokens_total": 200000,
+      "max_wall_seconds": 900
+    }
+  },
+  "data": {
+    "snapshot": {
+      "root": "tests/fixtures/mini_snapshot"
+    }
+  },
+  "gates": {
+    "approval": {
+      "actions": [
+        "publish_report",
+        "promote_version",
+        "export_orders"
+      ],
+      "bind_to_artifact_hashes": true,
+      "default_approver": "Zhengjia Zhu",
+      "required": true
+    },
+    "change_control": {
+      "hard_gates": [
+        "leakage_tests_pass",
+        "verification_passes",
+        "deterministic_replay",
+        "budget_within_limit"
+      ],
+      "metric_acceptance": {
+        "annualized_excess_return_max_degradation": 0.005,
+        "information_ratio_max_degradation": 0.1,
+        "max_drawdown_max_degradation": 0.02,
+        "tracking_error_abs_tolerance": 0.01,
+        "turnover_max_increase": 0.1
+      },
+      "registry": {
+        "releases_dir": "registry/releases",
+        "require_git_clean": true,
+        "versions_file": "registry/versions.json"
+      }
+    },
+    "leakage": {
+      "assert_max_panel_date_le_as_of": true,
+      "future_perturbation_test": true,
+      "require_prompt_cutoff": true
+    },
+    "verification": {
+      "escalate_after_revisions": true,
+      "max_revision_rounds": 2,
+      "required_checks": [
+        "artifact_schema",
+        "artifact_hashes",
+        "ledger_reconcile",
+        "weights_bounds",
+        "industry_neutrality",
+        "forbidden_securities",
+        "pit_fundamentals",
+        "pit_prices",
+        "determinism_summary"
+      ],
+      "tolerances": {
+        "cash_absolute": 0.01,
+        "metrics_relative": 1e-06,
+        "weights_absolute": 1e-06
+      }
+    }
+  },
+  "model": {
+    "default": {
+      "backend": "replay",
+      "model": "replay-fixture"
+    }
+  },
+  "strategy": {
+    "backtest": {
+      "benchmark": "000300.SH",
+      "constraints": {
+        "cash_buffer": 0.0,
+        "industry_active_limit": 0.1,
+        "max_active_weight": 0.1,
+        "max_weight": 0.4,
+        "min_names": 4,
+        "te_target": 0.03,
+        "turnover_limit": 1.0
+      },
+      "costs": {
+        "commission_bps": 2.5,
+        "impact_coef": 0.0,
+        "min_trade_notional": 10000,
+        "slippage_bps": 5.0,
+        "stamp_duty_bps": 5.0
+      },
+      "end_date": "2024-12-31",
+      "execution": "next_close",
+      "optimizer": {
+        "max_iter": 50,
+        "method": "reference_grid",
+        "tol": 1e-09
+      },
+      "rebalance": "monthly",
+      "signal_lag_days": 1,
+      "start_date": "2022-04-01"
+    },
+    "data": {
+      "end_date": "2024-12-31",
+      "frequency": "daily",
+      "price_adjustment": "qfq",
+      "snapshot": "tests/fixtures/mini_snapshot",
+      "start_date": "2022-01-04"
+    },
+    "demo": {
+      "amplitude": 0.03,
+      "description": "Candidate v1.2.0: weekly rebalance (turnover regression).",
+      "lookback": 15,
+      "rebalance": "weekly",
+      "variant": "rejected"
+    },
+    "factors": {
+      "catalog": {
+        "reversal_1m": {
+          "category": "momentum",
+          "description": "short-horizon reversal",
+          "direction": -1.0
+        }
+      },
+      "composite": {
+        "default_weights": {
+          "reversal_1m": 1.0
+        }
+      }
+    },
+    "monitoring": {
+      "data_staleness_days": 3,
+      "excess_drawdown_alert": 0.1,
+      "ic_decay_alert": -0.05,
+      "min_coverage": 0.9,
+      "te_alert": 0.08,
+      "te_stop_multiple": 2.0
+    },
+    "universe": {
+      "exclude_st": true,
+      "index_code": "000300",
+      "index_name": "CSI 300 (mini fixture)",
+      "min_listed_days": 0
+    }
+  },
+  "workflow": {
+    "name": "index_enhancement_research",
+    "version": "1.0.0"
+  }
+}

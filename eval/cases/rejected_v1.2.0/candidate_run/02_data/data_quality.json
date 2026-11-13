@@ -1,0 +1,19 @@
+{
+  "checks": [
+    {
+      "detail": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+      "id": "snapshot_hash",
+      "status": "pass"
+    },
+    {
+      "detail": "0.9774",
+      "id": "price_coverage",
+      "status": "pass"
+    }
+  ],
+  "coverage": 0.9773794281,
+  "rows": 4580,
+  "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+  "universe_size": 6,
+  "warnings": []
+}

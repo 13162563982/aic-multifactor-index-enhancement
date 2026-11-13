@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicwf.local/schemas/verification.schema.json",
+  "title": "Independent verification result",
+  "description": "Output of stage 09_verification, produced by deterministic recomputation code (never by an LLM) and consumed by the verifier note, report and registry stages. Check statuses are lowercase (pass/fail/warn/skip), matching aicwf.verify.checks. A PASS verdict with a fail check is contradictory and is rejected by aicwf.agents.validate.validate_verification_dict. The schema is forward-compatible at the top level: new optional keys may be added by the verifier without breaking consumers.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["verdict", "checks"],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "as_of": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Information cutoff of the verified run."
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One entry per independent check; ids match config/gates.yaml required_checks.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "status", "detail"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,63}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "fail", "warn", "skip"]
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        }
+      }
+    },
+    "recomputed": {
+      "type": "object",
+      "description": "Independently recomputed numbers (metrics, benchmark_metrics, weights, cash, ...). Numbers only: no wall-clock timestamps.",
+      "additionalProperties": true
+    },
+    "discrepancies": {
+      "type": "array",
+      "description": "Every mismatch found between produced artifacts and the independent recomputation.",
+      "items": {
+        "anyOf": [
+          {"type": "string", "minLength": 1, "maxLength": 2000},
+          {"type": "object"}
+        ]
+      }
+    },
+    "artifact_hashes": {
+      "type": "object",
+      "description": "sha256 of every verified artifact, logical name -> hex digest.",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(?:[0-9a-f]{64}|)$"
+      }
+    },
+    "tolerances": {
+      "type": "object",
+      "description": "Tolerances applied, copied from config/gates.yaml.",
+      "additionalProperties": true
+    },
+    "snapshot": {
+      "type": "object",
+      "description": "Snapshot identity of the verified run (hash, as_of, path).",
+      "additionalProperties": true
+    },
+    "verifier": {
+      "description": "Verifier identity metadata (role/name/model/version and check counters).",
+      "anyOf": [
+        {"type": "string", "minLength": 1, "maxLength": 200},
+        {
+          "type": "object",
+          "additionalProperties": true
+        }
+      ]
+    }
+  }
+}

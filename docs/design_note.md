@@ -262,4 +262,275 @@ the *narrative*, but it cannot change the *measurement* or approve its own outpu
 
 ---
 
-<!-- Sections 4-8 are completed after end-to-end integration and evidence generation. -->
+## 4. Long-running operation
+
+### 4.1 State model and checkpoints
+
+The controller persists state in SQLite (`state/runs.db`, gitignored). The schema is small on
+purpose so that a reviewer can inspect it with any SQLite client:
+
+| Table | Content |
+|---|---|
+| `runs` | run id, workflow version, `as_of`, config hash, snapshot hash, LLM mode, seed, parent run, status, created/updated timestamps |
+| `steps` | run id, stage, status, attempt, input hash, start/finish timestamps, error class and message |
+| `artifacts` | run id, stage, logical name, relative path, content hash, byte size |
+| `events` | append-only JSONL mirror for humans, indexed by run |
+| `budgets` | LLM calls, input/output tokens, estimated cost, wall milliseconds |
+| `approvals` | run id, action, scope, approver, decision, artifact hashes, decision time |
+
+Every stage writes artifacts to a temporary sibling file, fsyncs, and atomically renames it
+before the controller records the artifact hash in a database transaction. A crash can therefore
+happen in exactly two places: before the artifact exists (the stage is re-run) or after the
+artifact exists but before the step is marked complete (the stage is re-run and produces
+byte-identical content, then the checkpoint is recorded). The run never observes a half-written
+file.
+
+A completed step is skipped only when its **input hash** matches the current input hash. The
+hash covers the relevant configuration subset, the content hashes of all upstream artifacts,
+the `as_of`, the snapshot hash, and the hashes of the role prompt and skill used by an agent
+stage. If the hash differs — because an upstream stage produced a different artifact, or a
+prompt was edited — the step and every downstream step are re-run. This is what makes
+"resume without repeating completed actions" safe: the controller does not guess from timestamps;
+it compares content.
+
+### 4.2 Schedule and triggers
+
+Production is a monthly process. `config/workflow.yaml` records the cron expression
+(`0 18 1 * *`, Asia/Shanghai) and the command template; `scripts/scheduled_monitor.ps1` installs
+it in Windows Task Scheduler (a cron line is documented for Linux/macOS). The domain trading
+calendar, not the job scheduler, decides the last trading day of the month.
+
+A second trigger compares the `snapshot_hash` of the latest snapshot with the snapshot used by
+the last monitoring run. A changed hash means new data arrived, which starts a monitoring run
+and, on a rebalance month, a full research run. Manual runs (`--as-of`) support walk-forward
+experiments; because the snapshot is frozen, a past run can be reproduced later.
+
+### 4.3 Retries, stopping and escalation
+
+The controller classifies failures rather than retrying everything:
+
+| Failure class | Examples | Policy |
+|---|---|---|
+| Transient | HTTP disconnect, rate limit, timeout, LLM 5xx | retry up to the configured attempt count with exponential backoff and jitter |
+| Data quality | missing coverage, duplicated rows, stale snapshot, non-positive prices | no retry; fail the stage and record the failing check |
+| Validation | schema-invalid agent payload, constraint violation, unknown factor id | bounded repair for agent output (max 2), otherwise fail |
+| Budget | wall clock, LLM calls, tokens or cost exhausted | pause the run (`budget_exhausted`), keep all checkpoints, resume after the limit is raised |
+| Approval | publish/promote/export requested without a decision | pause (`awaiting_approval`), no side effect |
+| Deterministic | numerical failure, ledger inconsistency, verification FAIL after revisions | block and escalate with a structured record |
+
+Escalation writes `escalation.json` with the failed stage, attempt count, error class, the last
+events, and the human action required. The run exits with code 3 and remains resumable. Nothing
+is silently dropped, and no stage is allowed to loop forever.
+
+### 4.4 Limits and permissions
+
+| Limit | Value | Enforcement |
+|---|---|---|
+| Wall clock | 900 s per run | checked before every stage and LLM call; pause on breach |
+| LLM calls | 40 per run | counter in SQLite; guarded client refuses the 41st call |
+| Tokens | 200,000 per run | counted from the backend's usage report |
+| Monetary cost | $0 for the local model | priced only if an OpenAI-compatible backend is configured |
+| Retries | 3 transient attempts per stage | backoff 1 s / 2 s / 4 s with jitter |
+| Revisions | 2 | verification failures trigger at most two bounded revision loops |
+| Agent tools | read-only artifact access; write only inside its own stage directory; no network; no shell; at most 3 tool rounds | harness-side allowlists, not prompt instructions |
+| Data access | the frozen snapshot only; `date <= as_of` | data portal filter plus PIT audit |
+
+The tool permissions are enforced by the runtime that executes tool directives. A prompt that
+asks to read another stage's files or to call the network simply receives a refusal, and the
+refusal is recorded.
+
+### 4.5 Recovery, demonstrated
+
+`python -m aicwf fault-demo` injects a crash at the backtest stage in two ways: after the
+artifact is written but before the checkpoint is committed, and before the stage starts. The
+resumed run skips every completed stage (`skipped_completed` events), re-runs only the
+interrupted stage, and produces the same artifact content hashes as an uninterrupted run. The
+event log, the state export and the artifact hashes are kept under `evidence/resume/`. Because
+the ledger and order list are single deterministic artifacts per run and no external side effect
+is allowed before approval, re-running a stage cannot duplicate a trade.
+
+---
+
+## 5. Verification and improvement
+
+### 5.1 Independent verification
+
+The verification stage is written against the artifacts, not against the producer's functions.
+It does not import the backtest engine. It reconstructs the portfolio value path from
+`ledger.parquet` and the price panel, recomputes returns, drawdowns, turnover, benchmark
+returns, tracking error and information ratio with an independent implementation, and compares
+them with `metrics.json` under the tolerances in `config/gates.yaml` (1e-6 relative for metrics,
+1e-6 absolute for weights, 1 cent for cash). It then runs invariant checks:
+
+| Check | What it proves |
+|---|---|
+| `artifact_schema` | every declared artifact exists and has the contracted columns and key fields |
+| `artifact_hashes` | declared hashes match the files on disk (nothing changed after declaration) |
+| `ledger_reconcile` | cash + positions = NAV on every date; no negative cash or shares; trades only on valid days |
+| `weights_bounds` | long-only, fully invested, per-name weight and active caps respected |
+| `industry_neutrality` | active industry weights stay inside the configured band |
+| `forbidden_securities` | no ST names, suspended names or limit-up buys / limit-down sells |
+| `pit_fundamentals` | every fundamental value used was announced on or before the decision date |
+| `pit_prices` | no price row after the decision date enters a signal or a return |
+| `metric_reconcile` | independent recomputation agrees with the reported metrics |
+| `determinism_summary` | the content hashes recorded for the run are the hashes the verifier recomputes |
+
+The verdict is binary. A failure produces a structured list of discrepancies, and the verifier
+agent writes a short note explaining the consequence in plain language. The verifier has read-only
+access; it cannot repair the artifacts it judges.
+
+### 5.2 Human approval before consequential actions
+
+Publication of the research note, promotion of a strategy version, and export of an order list
+are consequential. Each is a named action with its own gate:
+
+* The run stops before the approval stage and writes an approval request containing the run id,
+  the action, the artifact hashes of the verified package, and the verification verdict.
+* A human runs `python -m aicwf approve <run_id> --action <action> --approver <name> --note ...`.
+  The decision is stored in SQLite and written as `approval.json`.
+* With `bind_to_artifact_hashes: true`, changing any approved artifact invalidates the decision
+  and re-blocks the gate. Approval is therefore bound to what the human actually saw.
+* `--scope run` satisfies every gate of that run (one approval for the monthly package);
+  `--scope action` restricts the approval to one action, so promoting a version after publication
+  requires a second, explicit decision.
+
+The approval gate is enforced in the runner, not in a prompt: a script cannot skip it, and the
+CLI cannot promote a version without a matching approval row.
+
+### 5.3 Bounded revision and escalation
+
+When verification fails, the controller does not ask the same agent to "try again" indefinitely.
+It writes a structured critique (failed checks, discrepancies, affected artifacts), identifies
+the earliest stage whose output could cause the failure, re-runs that stage and its descendants,
+and re-verifies. The loop is capped at two revisions by `config/gates.yaml`. If the third
+verification still fails, the run is blocked, an escalation record names the failed checks and
+the human decision required, and no report or approval request is produced. The state machine is
+shown in `docs/recovery_state.png`.
+
+### 5.4 Testing a proposed change against a fixed baseline
+
+The desk is allowed to change things — a factor definition, a prompt, a tracking-error target, a
+cost assumption — but a change is not accepted because it looks better in one run. The baseline
+is a frozen, versioned record: the snapshot hash, the config and prompt hashes, the replay-cache
+key, and the expected metrics of the approved version (`eval/baseline_v1.0.0.json`). A candidate
+is evaluated by re-running the workflow on the same snapshot with the candidate config or prompt
+and the recorded replay cache, then comparing:
+
+* **Hard gates (any failure rejects):** leakage tests pass; independent verification passes;
+  replay is deterministic (identical content hashes); the run stays inside budget.
+* **Soft tolerances (from `config/gates.yaml`):** annualised excess return may not degrade by
+  more than 0.5 percentage points; information ratio by more than 0.1; realised tracking error
+  must stay within ±1 percentage point of the target; maximum drawdown may not degrade by more
+  than 2 percentage points; turnover may not increase by more than 10 percentage points.
+
+The decision record stores the git commit, config hash, prompt hashes, metric-by-metric deltas,
+the rule that decided the outcome, and a human-readable rationale. Accepted changes are promoted
+to a new version; rejected changes are kept as a rejected entry so the same idea is not silently
+re-litigated. `eval/cases/` contains both an accepted and a rejected candidate to demonstrate
+the mechanism.
+
+### 5.5 Versioning and rollback
+
+`registry/versions.json` is append-only. Each entry records the version, the git commit, the
+config and prompt hashes, the snapshot hash, the headline metrics, the verification verdict, the
+approval and the previous version. A promoted version also gets a release bundle
+(`registry/releases/<version>/`) containing the exact config, prompts and skills that produced
+it. Rollback restores the bundle, re-runs the smoke evaluation on the frozen snapshot and
+replay cache, compares the metrics with the recorded ones, and appends a rollback event with
+before/after values. History is never rewritten, so a reviewer can see both the reason for the
+change and the reason for the reversal.
+
+### 5.6 Leakage prevention as a layered control
+
+No single check is trusted. The layers are: the snapshot is frozen and pinned by hash; the data
+stage rejects rows after `as_of`; fundamentals are keyed by announcement date; signals are
+executed at the next close; prompts state the cutoff and the agents have no network; the
+verifier re-checks announcement dates and price dates; and a future-perturbation test replaces
+post-`as_of` data with random values and asserts that every metric and artifact hash is
+unchanged. A leakage bug must therefore defeat all of these layers to reach the report.
+
+---
+
+## 6. Evidence index
+
+| Claim | Where to look |
+|---|---|
+| The workflow runs end to end and produces a verified package | `examples/demo_run/` (curated artifacts), `evidence/run/` (event log + state export) |
+| The real local model was used, not only canned text | `evidence/llm_cache/` (prompt/response records), `evidence/run/llm_usage.json` |
+| An interrupted run resumes without repeating completed stages | `evidence/resume/` (fault log, resume log, stage status table, artifact hash comparison) |
+| Independent verification catches tampering and schema violations | `tests/test_verify_*.py`, `evidence/verification/` |
+| A proposed change is tested against a fixed baseline and accepted or rejected | `eval/baseline_v1.0.0.json`, `eval/cases/accepted_v1.1.0/`, `eval/cases/rejected_v1.2.0/`, `evidence/eval/` |
+| Accepted versions are promoted and can be rolled back | `registry/versions.json`, `registry/releases/`, `evidence/rollback/` |
+| Monitoring enforces tracking-error and drift thresholds | `evidence/monitor/` (two monthly runs) |
+| Leakage is controlled, including a future-perturbation test | `tests/test_quant_leakage.py`, `tests/test_data_pit.py`, `evidence/leakage_test.txt` |
+| The ZIP contains the complete Git history | `evidence/package_check.txt` (extraction self-check) |
+
+The per-file map with issue references is maintained in `docs/evidence_index.md`.
+
+## 7. Limitations and risks
+
+The honest limitations are documented in `finance_methodology.md` section 9; the main ones are
+survivorship and reconstitution bias from the current-constituent universe, vendor approximations
+(free-float weights, industry classification, occasional estimated announcement dates), a single
+market and period, a small local language model that writes advisory prose only, and the absence
+of any live execution or capacity model. The workflow is designed so that these limitations are
+visible in the artifacts rather than hidden: the bias-stress result is reported next to the
+headline result, the PIT audit reports estimated announcement dates, and the verification record
+states what was and was not checked.
+
+Operationally, the most likely failure modes are public-endpoint rate limiting during a snapshot
+refresh (handled by retries, a resumable download cache and the frozen snapshot) and local model
+unavailability (handled by the replay cache). A budget overrun pauses rather than loses a run. An
+unhandled controller bug stops the run with state intact and an escalation record.
+
+## 8. Appendix
+
+### 8.1 Command reference
+
+| Command | Purpose |
+|---|---|
+| `python -m aicwf doctor` | environment, config, snapshot, state and model checks |
+| `python -m aicwf snapshot --as-of <date>` | rebuild the frozen snapshot from public endpoints |
+| `python -m aicwf run --as-of <date> --llm {replay,record,ollama,null} --run-id <id>` | start a research run |
+| `python -m aicwf resume <run_id>` | resume an interrupted, paused or approved run |
+| `python -m aicwf status [<run_id>] [--events N] [--json]` | inspect state |
+| `python -m aicwf approve <run_id> --action <action> --scope {run,action}` | record a human decision and resume |
+| `python -m aicwf state-export --run-id <id>` | export the SQLite state as JSON |
+| `python -m aicwf fault-demo --as-of <date>` | crash/resume demonstration |
+| `python -m aicwf monitor --as-of <date>` | monthly monitoring run |
+| `python -m aicwf eval --candidate <id> --baseline <id>` | change evaluation against the baseline |
+| `python -m aicwf rollback --to <version>` | restore a release bundle and append an audit record |
+| `python scripts/package_submission.py` | build and verify the submission ZIP |
+
+Exit codes: `0` success · `1` failed · `2` usage · `3` awaiting approval · `4` blocked · `5` budget
+exhausted · `6` not implemented · `42` simulated crash.
+
+### 8.2 Configuration excerpts
+
+The workflow DAG is data, not code. Each stage declares its handler, dependencies, timeout,
+retry limit, outputs and, for agent stages, the role prompt and output schema
+(`config/workflow.yaml`). Budgets, verification thresholds and change-control tolerances are
+separate files (`config/budgets.yaml`, `config/gates.yaml`), so a reviewer can audit the policy
+without reading Python. Strategy parameters — universe, factor catalogue, backtest window, cost
+model, portfolio constraints, robustness grid and monitoring thresholds — live in
+`config/strategy.yaml` and are hashed into every run request.
+
+### 8.3 Data and artifact integrity
+
+Every snapshot file is hashed, and the snapshot hash is recorded in the run request. Every stage
+declares its artifacts; the controller hashes them with a canonical, platform-independent
+projection (sorted rows and columns, rounded floats, ISO dates) and stores the hashes in SQLite.
+The verifier recomputes the hashes from disk and fails if a declared artifact changed. The
+package therefore answers "which data, which code, which prompt, which outputs" for every
+approved version.
+
+### 8.4 Version history
+
+The repository history is developed in meaningful commits: scaffold and contracts; data client
+and snapshot; quality gates and point-in-time audit; factor library; backtest and costs;
+robustness; portfolio optimisation; controller and state; crash recovery and approval; agent
+runtime and prompts; independent verification; evaluation and registry; monitoring; end-to-end
+integration; the real-model run; evidence; tests; design note and diagrams; documentation; final
+packaging. `git log --oneline` in the submitted ZIP shows the full sequence; `git status` is clean.
+
+

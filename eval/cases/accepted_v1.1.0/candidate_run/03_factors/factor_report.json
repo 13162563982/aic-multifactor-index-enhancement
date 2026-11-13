@@ -1,0 +1,21 @@
+{
+  "autocorrelation": {
+    "lag1": 0.0
+  },
+  "composite_weights": {
+    "reversal_1m": 1.0
+  },
+  "correlation_matrix": {
+    "reversal_1m": {
+      "reversal_1m": 1.0
+    }
+  },
+  "coverage": 1.0,
+  "ic_t_stat": 0.0,
+  "rank_ic": {
+    "mean": 1.8684241146130684e-17,
+    "n_periods": 35,
+    "std": 1.0000000000000002
+  },
+  "warnings": []
+}

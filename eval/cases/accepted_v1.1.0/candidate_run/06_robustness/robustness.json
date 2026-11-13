@@ -1,0 +1,69 @@
+{
+  "bias_stress": {
+    "annualized_excess_return": 0.1710939206358707,
+    "drop_top_k": 2
+  },
+  "cost_sensitivity": [
+    {
+      "annualized_excess_return": 0.23562522751449427,
+      "multiplier": 0.0
+    },
+    {
+      "annualized_excess_return": 0.22812522751449427,
+      "multiplier": 1.0
+    },
+    {
+      "annualized_excess_return": 0.21312522751449425,
+      "multiplier": 3.0
+    }
+  ],
+  "deflated_sharpe": 1.705350158064031,
+  "leave_one_out": [
+    {
+      "annualized_excess_return": 0.0,
+      "factor": "reversal_1m"
+    }
+  ],
+  "parameter_grid": [
+    {
+      "annualized_excess_return": 0.22812522751449427,
+      "rebalance": "monthly",
+      "te_target": 0.03
+    },
+    {
+      "annualized_excess_return": 0.29656279576884254,
+      "rebalance": "monthly",
+      "te_target": 0.05
+    },
+    {
+      "annualized_excess_return": 0.15968765926014597,
+      "rebalance": "quarterly",
+      "te_target": 0.03
+    }
+  ],
+  "placebo": {
+    "mean_excess_return": 0.0,
+    "p_value": 0.5,
+    "repetitions": 3
+  },
+  "subperiods": [
+    {
+      "annualized_excess_return": 0.18250018201159543,
+      "end": "2023-07-03",
+      "portfolio_return": 0.2325243762,
+      "start": "2022-01-04"
+    },
+    {
+      "annualized_excess_return": 0.27375027301739313,
+      "end": "2024-12-31",
+      "portfolio_return": 0.4504204120583788,
+      "start": "2023-07-04"
+    }
+  ],
+  "summary": {
+    "concerns": [],
+    "n_observations": 781,
+    "pass": true,
+    "tracking_error": 0.21754047425017686
+  }
+}

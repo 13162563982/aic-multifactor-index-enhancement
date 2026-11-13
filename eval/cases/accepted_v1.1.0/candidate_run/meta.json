@@ -1,0 +1,13 @@
+{
+  "amplitude": 0.03,
+  "as_of": "2024-12-31",
+  "description": "Candidate v1.1.0: refined 16-day reversal lookback (+1 day).",
+  "lookback": 16,
+  "rebalance": "monthly",
+  "rebalance_count": 35,
+  "snapshot_dir": "tests/fixtures/mini_snapshot",
+  "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+  "trade_count": 206,
+  "variant": "accepted",
+  "version": "v1.1.0"
+}

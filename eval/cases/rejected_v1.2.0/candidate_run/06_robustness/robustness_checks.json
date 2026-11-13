@@ -1,0 +1,30 @@
+[
+  {
+    "detail": "excess return positive in the full sample (demo estimate)",
+    "name": "subperiod_consistency",
+    "status": "pass",
+    "threshold": 0.0,
+    "value": 0.21629867581210305
+  },
+  {
+    "detail": "excess return survives 3x costs in the demo estimate",
+    "name": "cost_sensitivity",
+    "status": "pass",
+    "threshold": -0.0075,
+    "value": 0.21629867581210305
+  },
+  {
+    "detail": "randomized-signal placebo does not reproduce the result",
+    "name": "placebo",
+    "status": "pass",
+    "threshold": 0.21629867581210305,
+    "value": 0.0
+  },
+  {
+    "detail": "deflated Sharpe ratio estimate stays positive",
+    "name": "deflated_sharpe",
+    "status": "pass",
+    "threshold": 0.0,
+    "value": 1.5995967489871623
+  }
+]

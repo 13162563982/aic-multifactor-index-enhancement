@@ -1,0 +1,31 @@
+{
+  "action": "promote_version",
+  "approver": "Zhengjia Zhu",
+  "artifact_hashes": {
+    "00_intake/run_request.json": "4f0170531b70f4c63d552da2ddab6f2d71088c1e688b5c0ffe4e125bfcc447ad",
+    "01_hypothesis/hypothesis.json": "05acbee7989c3fc244f26c81348433c5fc9d06d613cc31b5ec99cb4fb33153d7",
+    "01_hypothesis/rationale.md": "1f99ef64ef7267f4540ddeae8a025f85d1a5c86e2745910141e744f627eb20a0",
+    "02_data/benchmark.parquet": "09c29fbd2d8cdeec8913b69674e3b6d97a55abe31141f8df6d117cf8095100ec",
+    "02_data/data_quality.json": "ed8d90a0cd727f87f5ed6e4306663aa22f46bb68f30af8fa4b1d2035fbe36985",
+    "02_data/panel.parquet": "37581aab62ef8e3f93a52be272129f8b58eca5103e5c4adc9496a55ea5085fe0",
+    "02_data/pit_audit.json": "3be19037503d02fa5ad1f0019d9d3dccf3264781267453a6532b0d0e96754b2a",
+    "03_factors/factor_panel.parquet": "41220c529ba0591de7809b753ac91f02517ec351f09f7ec9697e6cd66c990d70",
+    "03_factors/factor_report.json": "ca15aab620e98635a4ec259871995767f9d3a5fba103e0dedac5b58aeea0f07d",
+    "05_backtest/equity_curve.csv": "af0eb6c4389b4741edaaa7563e942ad64fe3c6a8af8d9fcd0574e314de0be1bc",
+    "05_backtest/holdings.parquet": "7a1d0e72d931ef2827bcee19969f03fdae28601360fc5a716395e2d2a8a5b178",
+    "05_backtest/ledger.parquet": "4f3edb8a8b1eb2fd0cdeda03b3a77fec88751ce1b5bdf014a3e24a0d3fae9660",
+    "05_backtest/metrics.json": "603acd4801a836f510aa824c2e06c7010973d9f64c3e4e12bf7ef034b84410fb",
+    "06_robustness/robustness.json": "bccbd430453f552883a24974686753d4f83966274ec242aa71cfc2c46a7e3be3",
+    "06_robustness/robustness_checks.json": "6efc0006c347f592327e9bf36b6413c90691fd4934c00c58ac0eaf7ba68e6f20",
+    "08_portfolio/orders.csv": "855f93cf29c06534500e2f875e9c1845ed36b1c38365ebf15c9a4b3a2f1064d9",
+    "08_portfolio/risk_report.json": "36892cdaaa0c4d2a31a8c0fa44c39bb029f014c91b5b32a51831e4637b4b5a69",
+    "08_portfolio/target_weights.parquet": "895ffc075e450021a1643be5636252a059e6e49d528493cfc0b16c79ce9ee1ef",
+    "09_verification/verification.json": "7f06d1a7d779dfc13b441925a2c11a041c4ca6333c2352a6db33f7bd7e57e2bc"
+  },
+  "decided_at_utc": "2024-12-31T00:00:00+00:00",
+  "decision": "approve",
+  "note": "Deterministic fixture approval for rejected / v1.2.0.",
+  "run_id": "demo-rejected-2024-12-31",
+  "scope": "run",
+  "version": "v1.2.0"
+}

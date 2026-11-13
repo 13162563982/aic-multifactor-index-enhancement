@@ -52,3 +52,7 @@ change_control:
     versions_file: registry/versions.json
     releases_dir: registry/releases
     require_git_clean: true
+    # Candidate version recorded in the approval artifact and promoted by the
+    # registry stage. Bump this per release candidate (the registry stage may
+    # override it via `config["registry"]["candidate_version"]`).
+    candidate_version: "v1.1.0"

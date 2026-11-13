@@ -32,6 +32,15 @@ def _require(condition: bool, message: str) -> None:
         raise ValidationError(message)
 
 
+def workflow_section(config: dict[str, Any]) -> dict[str, Any]:
+    """Return the workflow mapping from either config shape."""
+
+    section = (config or {}).get("workflow") or {}
+    if isinstance(section, dict) and isinstance(section.get("workflow"), dict):
+        return section["workflow"]
+    return section
+
+
 def validate_config_bundle(config: dict[str, Any]) -> list[str]:
     """Validate the merged config bundle; return non-fatal warnings."""
 
@@ -40,7 +49,7 @@ def validate_config_bundle(config: dict[str, Any]) -> list[str]:
         raise ConfigError(f"missing config sections: {', '.join(missing)}")
 
     strategy = config["strategy"] or {}
-    workflow = config["workflow"]["workflow"]
+    workflow = workflow_section(config)
     stage_names = [stage.get("name") for stage in workflow.get("stages", [])]
     _require(
         set(stage_names) == set(STAGES),
@@ -90,12 +99,14 @@ def resolve_snapshot(ctx: RunContext) -> tuple[Path, dict[str, Any]]:
     """Locate the frozen snapshot and verify its manifest and file hashes."""
 
     if ctx.snapshot_dir is not None:
-        candidate = Path(ctx.snapshot_dir)
+        candidate = Path(ctx.snapshot_dir).expanduser().resolve()
     else:
         configured = (ctx.config.get("strategy", {}).get("data") or {}).get("snapshot")
-        candidate = Path(configured) if configured else project_path("data", "snapshots", date_str(ctx.as_of))
+        candidate = Path(configured).expanduser() if configured else project_path("data", "snapshots", date_str(ctx.as_of))
         if not candidate.is_absolute():
-            candidate = PROJECT_ROOT / candidate
+            candidate = (PROJECT_ROOT / candidate).resolve()
+        else:
+            candidate = candidate.resolve()
 
     if not candidate.exists():
         fallback = project_path("data", "snapshots", date_str(ctx.as_of))
@@ -146,19 +157,22 @@ def run_intake(ctx: RunContext) -> StageOutput:
     budget_cfg = (ctx.config.get("budgets") or {}).get("run") or {}
     config_hash = hash_json({name: ctx.config.get(name) for name in HASHED_SECTIONS})
 
+    manifest_start, manifest_end = _manifest_price_range(manifest)
+    data_start = strategy.get("data", {}).get("start_date") or manifest_start
+    data_end = strategy.get("data", {}).get("end_date") or manifest_end
+    if not data_start or not data_end:
+        raise ConfigError("cannot determine the data window from config or snapshot manifest")
+
     request = {
         "run_id": ctx.run_id,
         "as_of": date_str(ctx.as_of),
         "snapshot": snapshot.relative_to(PROJECT_ROOT).as_posix(),
         "snapshot_hash": manifest.get("snapshot_hash"),
         "config_hash": config_hash,
-        "workflow_version": ctx.config["workflow"]["workflow"].get("version"),
+        "workflow_version": workflow_section(ctx.config).get("version"),
         "llm_mode": ctx.llm_mode,
         "seed": ctx.seed,
-        "data_window": {
-            "start": date_str(strategy.get("data", {}).get("start_date", manifest.get("date_ranges", {}).get("prices", {}).get("min", ""))),
-            "end": date_str(strategy.get("data", {}).get("end_date", manifest.get("date_ranges", {}).get("prices", {}).get("max", ""))),
-        },
+        "data_window": {"start": date_str(data_start), "end": date_str(data_end)},
         "benchmark": strategy.get("backtest", {}).get("benchmark"),
         "universe": universe,
         "budget": {
@@ -186,6 +200,22 @@ def run_intake(ctx: RunContext) -> StageOutput:
         artifacts={"run_request": out.relative_to(PROJECT_ROOT).as_posix()},
         summary=summary,
     )
+
+
+def _manifest_price_range(manifest: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Read the price date range from either manifest shape.
+
+    The snapshot builder records ``date_ranges.prices`` as ``[min, max]``; earlier
+    drafts used ``{"min": ..., "max": ...}``. Accept both.
+    """
+
+    ranges = manifest.get("date_ranges") or {}
+    prices = ranges.get("prices")
+    if isinstance(prices, dict):
+        return prices.get("min"), prices.get("max")
+    if isinstance(prices, (list, tuple)) and len(prices) >= 2:
+        return str(prices[0]), str(prices[1])
+    return None, None
 
 
 def read_universe_summary(snapshot: Path) -> dict[str, Any]:

@@ -1,0 +1,76 @@
+{
+  "baseline": {
+    "annualized_excess_return": 0.229174302886324,
+    "path": "eval\\baseline_v1.0.0.json",
+    "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+    "tracking_error": 0.21762205657076986
+  },
+  "cases": {
+    "accepted_v1.1.0": {
+      "decision": "accept",
+      "dir": "eval\\cases\\accepted_v1.1.0",
+      "expected": "accept",
+      "metric_diffs": {
+        "annualized_excess_return": {
+          "delta": -0.001049075371829744,
+          "status": "pass"
+        },
+        "information_ratio": {
+          "delta": -0.004427508672814495,
+          "status": "pass"
+        },
+        "max_drawdown": {
+          "delta": -0.005310632196267817,
+          "status": "pass"
+        },
+        "tracking_error": {
+          "delta": -8.158232059299331e-05,
+          "status": "pass"
+        },
+        "turnover": {
+          "delta": 0.060798251332836895,
+          "status": "pass"
+        }
+      }
+    },
+    "rejected_v1.2.0": {
+      "decision": "reject",
+      "dir": "eval\\cases\\rejected_v1.2.0",
+      "expected": "reject",
+      "metric_diffs": {
+        "annualized_excess_return": {
+          "delta": -0.012875627074220963,
+          "status": "fail"
+        },
+        "information_ratio": {
+          "delta": -0.06044294528006111,
+          "status": "pass"
+        },
+        "max_drawdown": {
+          "delta": -0.0003444155972831542,
+          "status": "pass"
+        },
+        "tracking_error": {
+          "delta": 0.0002801526143584865,
+          "status": "pass"
+        },
+        "turnover": {
+          "delta": 3.2345228032518025,
+          "status": "fail"
+        }
+      }
+    }
+  },
+  "registry": {
+    "bundle_v1.0.0_intact": true,
+    "bundle_v1.1.0_intact": true,
+    "dir": "eval\\registry_roundtrip",
+    "history": "eval\\registry_roundtrip\\registry\\versions.json",
+    "release_v1.0.0_hash": "fcb39ef5a173538a393b9c4202ca7ff362175ef8799a83e21e064607d3dad9d7",
+    "release_v1.1.0_hash": "b55d64cf8525e862d982ce430202dbc0e534d6e2f839e1c758377350fcbd1d64",
+    "restored_config_files": 6,
+    "restored_variant": "baseline",
+    "rollback_entry_hash": "03a37edb563256789a84b2430ee2ebf216e71eca67f44dedffea5611566678e0",
+    "rollback_smoke": "pass"
+  }
+}

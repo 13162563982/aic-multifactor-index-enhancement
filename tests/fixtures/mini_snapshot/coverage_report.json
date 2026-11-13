@@ -1,0 +1,13 @@
+{
+  "as_of": "2024-12-31",
+  "coverage_ratio": 1.0,
+  "covered_names": 6,
+  "failed_names": [],
+  "notes": [
+    "synthetic fixture produced by scripts/make_fixture.py; no network access",
+    "stock 688001.SH is listed late (2022-06-01) and has 4 missing bars",
+    "stock 600002.SH has two estimated notice dates (report_date + 90 days)"
+  ],
+  "requested_names": 6,
+  "synthetic": true
+}

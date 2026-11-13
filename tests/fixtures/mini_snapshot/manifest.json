@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.1.0",
+  "as_of": "2024-12-31",
+  "created_at_utc": "2025-01-01T00:00:00+00:00",
+  "source_urls": {
+    "fixture": "synthetic://scripts/make_fixture.py"
+  },
+  "row_counts": {
+    "prices": 4576,
+    "fundamentals": 72,
+    "universe": 6,
+    "benchmark": 781,
+    "calendar": 781
+  },
+  "date_ranges": {
+    "prices": [
+      "2022-01-04",
+      "2024-12-31"
+    ],
+    "fundamentals": [
+      "2022-03-31",
+      "2024-12-31"
+    ],
+    "universe": [
+      "2008-09-25",
+      "2022-06-01"
+    ],
+    "benchmark": [
+      "2022-01-04",
+      "2024-12-31"
+    ],
+    "calendar": [
+      "2022-01-04",
+      "2024-12-31"
+    ]
+  },
+  "files": {
+    "benchmark.parquet": "5bb3c10ffb51ecb2602a2d651006d7963fb557800c76a0798e66f18494b77b02",
+    "calendar.parquet": "613ff8db7d4fe021528f7ec9f12a39d2b9520d33ee9875f1ba4e11dea545d0c4",
+    "coverage_report.json": "28148d7362c62a82b98741d640a821f690984f8eb235930aed8c2ea3c44dafe8",
+    "fundamentals.parquet": "3c0e9ba5fd7e3b86584b19108732fba306c9dabf1d0af1f0c6d4eac1aa3d0020",
+    "prices.parquet": "161e0258cb51b7afbf51c3512d8ccb80072e38e45029645761af2891d106cabc",
+    "universe.parquet": "14f04a7ab1d809457652c3c4af431a7934883d4ef8c1e9f2c4bc8b19e59c6e90"
+  },
+  "content_hashes": {
+    "benchmark.parquet": "f7ad8faafe65364378e81467defebd0adba3ba46bb01f1025105592b3b429f8e",
+    "calendar.parquet": "db11fc5f8ccb95aa22f7949ea9f4f9c334c9395d080d4713bc8b1c101a9d3f80",
+    "coverage_report.json": "53fc099fc56199a9774f35942d3c349c5fcaa1183663ef9cf36a00b713c4c47f",
+    "fundamentals.parquet": "ab81844d4d8d9c1de92c256d8be1b015c063b94e6e6ffc2da063782f51f766bd",
+    "prices.parquet": "f0e19be7b6f0ca2ef2a62782fb8f3e05aa79f72c699103cd2065ff580b259b92",
+    "universe.parquet": "30f9ebe5ec983b03b571910abd222041bdd6453a745ec886c0cb5a9e4ee90504"
+  },
+  "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+  "notes": [
+    "deterministic synthetic mini snapshot for offline tests (no network)",
+    "fixed seed 20240101; 6 synthetic stocks; 36 months ending 2024-12-31",
+    "synthetic trading calendar = weekdays (exchange holidays are not modelled)",
+    "industry/name/cap values are synthetic and not real market data"
+  ],
+  "provenance": {
+    "builder": "scripts/make_fixture.py",
+    "seed": 20240101,
+    "generator": "aicwf.data.snapshot.write_snapshot",
+    "stocks": 6
+  }
+}

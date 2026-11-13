@@ -74,7 +74,8 @@ def write_parquet_atomic(path: Path | str, frame: Any, **kwargs: Any) -> Path:
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     os.close(fd)
     try:
-        frame.to_parquet(tmp_name, index=False, **kwargs)
+        index = kwargs.pop("index", False)
+        frame.to_parquet(tmp_name, index=index, **kwargs)
         os.replace(tmp_name, path)
     finally:
         if os.path.exists(tmp_name):

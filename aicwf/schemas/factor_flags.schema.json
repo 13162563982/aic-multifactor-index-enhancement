@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicwf.local/schemas/factor_flags.schema.json",
+  "title": "Factor review flags",
+  "description": "Machine-readable output of the factor_analyst agent for stage 04_factor_review. Advisory only: flags never modify upstream factor artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["flags"],
+  "properties": {
+    "assessment_markdown": {
+      "type": "string",
+      "minLength": 100,
+      "maxLength": 8000,
+      "description": "Narrative factor review that becomes assessment.md. Must cite only numbers visible in the supplied factor report."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1000,
+      "description": "One-paragraph digest of the factor diagnostics."
+    },
+    "flags": {
+      "type": "array",
+      "maxItems": 20,
+      "description": "Advisory findings. severity is info/warn/block; warn and block findings must cite a diagnostic number in the message.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "message"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{2,63}$",
+            "description": "Stable snake_case identifier, unique within the list."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["info", "warn", "block"]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 600
+          },
+          "recommendation": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 400,
+            "description": "Optional suggested action for the research owner; advisory only."
+          },
+          "evidence": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {"type": "string", "minLength": 1, "maxLength": 200},
+            "description": "Optional pointers to factor-report fields or check ids supporting the flag."
+          }
+        }
+      }
+    }
+  }
+}

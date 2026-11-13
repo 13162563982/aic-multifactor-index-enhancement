@@ -1,0 +1,19 @@
+{
+  "as_of": "2024-12-31",
+  "budget": {
+    "max_cost_usd": 0.0,
+    "max_llm_calls": 40,
+    "max_revision_rounds": 2,
+    "max_tokens_total": 200000,
+    "max_wall_seconds": 900
+  },
+  "candidate_version": "v1.1.0",
+  "config_hash": "d1c85959932b16303597c6ef8dc24508b81a40abff5920375e5106866470f72e",
+  "llm_mode": "replay",
+  "run_id": "demo-accepted-2024-12-31",
+  "seed": 0,
+  "snapshot": "tests/fixtures/mini_snapshot",
+  "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+  "variant": "accepted",
+  "workflow_version": "1.0.0"
+}

@@ -1,0 +1,6 @@
+run:
+  max_cost_usd: 0.0
+  max_llm_calls: 40
+  max_revision_rounds: 2
+  max_tokens_total: 200000
+  max_wall_seconds: 900

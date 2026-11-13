@@ -14,6 +14,26 @@ run:
   max_revision_rounds: 2
   stage_default_timeout_s: 600
 
+# Retry classification. The controller retries ONLY failures whose exception type
+# (or one of its base classes) appears in `transient_categories`; everything else
+# fails fast or escalates. Names are matched against the exception class MRO, so
+# third-party exception classes can be listed without importing their libraries.
+retry:
+  transient_categories:
+    - RetryableError
+    - TimeoutError
+    - ConnectionError
+    - StageTimeout
+    - TransientError
+    - TransientFailure
+  escalate_categories:
+    - ValidationError
+    - DataQualityError
+    - EscalationRequired
+  non_retryable_categories:
+    - NonRetryableError
+    - ConfigError
+
 llm:
   # Example prices for the OpenAI-compatible backend; unused by the local model.
   price_per_1k_input_usd: 0.0

@@ -1,0 +1,13 @@
+{
+  "amplitude": 0.03,
+  "as_of": "2024-12-31",
+  "description": "Candidate v1.2.0: weekly rebalance (turnover regression).",
+  "lookback": 15,
+  "rebalance": "weekly",
+  "rebalance_count": 153,
+  "snapshot_dir": "tests/fixtures/mini_snapshot",
+  "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+  "trade_count": 889,
+  "variant": "rejected",
+  "version": "v1.2.0"
+}

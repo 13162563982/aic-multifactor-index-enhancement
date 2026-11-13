@@ -157,7 +157,9 @@ def build_registry() -> dict[str, StageFn]:
 
 
 def _approval_action(ctx: RunContext, stage: str) -> str:
-    stages = (ctx.config.get("workflow") or {}).get("workflow", {}).get("stages", [])
+    from aicwf.intake import workflow_section
+
+    stages = workflow_section(ctx.config).get("stages", [])
     for spec in stages:
         if spec.get("name") == stage:
             return spec.get("approval_action") or "publish_report"
@@ -200,27 +202,26 @@ def run_approval(ctx: RunContext) -> StageOutput:
 
     action = _approval_action(ctx, "approval")
     artifact_hashes = _verified_artifact_hashes(ctx)
-    payload = {
-        "run_id": ctx.run_id,
-        "action": action,
-        "decision": "approved",
-        "artifact_hashes": artifact_hashes,
-        "verification_verdict": (ctx.stage_outputs.get("verification").summary.get("verdict") if "verification" in ctx.stage_outputs else None),
-        "information_cutoff": date_str(ctx.as_of),
-    }
+    gate = getattr(ctx, "approval_gate", None)
     try:
         from aicwf.controller import approval as approval_mod
 
         writer = getattr(approval_mod, "write_approval_artifact", None)
         if writer is not None:
-            path = writer(gate="approval", run_id=ctx.run_id, run_dir=ctx.run_dir)
-            if path is None:
-                path = ctx.artifact_path("approval", "approval.json")
-                write_json(path, payload, sort_keys=True)
+            path = writer(
+                gate,
+                ctx.run_id,
+                ctx.run_dir,
+                action=action,
+                state=getattr(gate, "state", None),
+                config=ctx.config,
+            )
         else:  # pragma: no cover - compatibility with an older controller
+            payload = _approval_payload(ctx, action, artifact_hashes)
             path = ctx.artifact_path("approval", "approval.json")
             write_json(path, payload, sort_keys=True)
     except ImportError:  # pragma: no cover - controller not available in isolated tests
+        payload = _approval_payload(ctx, action, artifact_hashes)
         path = ctx.artifact_path("approval", "approval.json")
         write_json(path, payload, sort_keys=True)
 
@@ -234,9 +235,87 @@ def run_approval(ctx: RunContext) -> StageOutput:
     )
 
 
+def _approval_payload(ctx: RunContext, action: str, artifact_hashes: dict[str, str]) -> dict:
+    return {
+        "run_id": ctx.run_id,
+        "action": action,
+        "decision": "approved",
+        "artifact_hashes": artifact_hashes,
+        "verification_verdict": (
+            ctx.stage_outputs.get("verification").summary.get("verdict")
+            if "verification" in ctx.stage_outputs
+            else None
+        ),
+        "information_cutoff": date_str(ctx.as_of),
+    }
+
+
 # ---------------------------------------------------------------------------
-# Thin delegations owned by other subsystems
+# Bounded revision planning (used by the CLI's --max-revisions loop)
 # ---------------------------------------------------------------------------
+
+#: Earliest stage whose output can plausibly explain a failed verification check.
+#: Checks without an entry are treated as non-revisable (escalate instead).
+REVISION_STAGE_MAP: dict[str, str] = {
+    "weights_bounds": "hypothesis",
+    "industry_neutrality": "hypothesis",
+    "pit_prices": "data_prep",
+    "pit_fundamentals": "data_prep",
+    "data_quality": "data_prep",
+    "ledger_reconcile": "backtest",
+    "metrics_recompute": "backtest",
+    "t1_tradability": "backtest",
+    "forbidden_securities": "backtest",
+    "determinism_summary": "factor_build",
+}
+#: Checks that indicate a configuration or artifact-integrity problem that a
+#: re-run cannot fix; they escalate directly instead of burning revision budget.
+NON_REVISABLE_CHECKS = frozenset({"artifact_schema", "artifact_hashes"})
+
+
+def _runs_root() -> Path:
+    import os
+
+    configured = os.environ.get("AICWF_RUNS_DIR")
+    return Path(configured).expanduser().resolve() if configured else project_path("outputs", "runs")
+
+
+def plan_revision(run_id: str, config: dict, *, run_dir: Path | str | None = None) -> list[str] | None:
+    """Plan a bounded revision after a verification failure.
+
+    Returns the earliest stage(s) to invalidate (the runner expands them to their
+    descendants), or ``None`` when the failure is not revisable by re-running the
+    workflow. The mapping is deliberately conservative: only failures that can
+    plausibly be changed by a revised hypothesis, rebuilt factors, re-prepared
+    data or a re-run backtest trigger a revision. Artifact schema/hash failures
+    and unknown checks escalate immediately.
+    """
+
+    from aicwf.contracts import STAGES
+
+    directory = Path(run_dir) if run_dir is not None else _runs_root() / run_id
+    verification_path = directory / "09_verification" / "verification.json"
+    if not verification_path.exists():
+        return None
+    try:
+        verification = read_json(verification_path)
+    except Exception:
+        return None
+    if str(verification.get("verdict", "")).upper() != "FAIL":
+        return None
+
+    failed = [
+        str(check.get("id"))
+        for check in verification.get("checks", [])
+        if str(check.get("status", "")).lower() == "fail"
+    ]
+    if not failed or any(check in NON_REVISABLE_CHECKS for check in failed):
+        return None
+    stages = {REVISION_STAGE_MAP[check] for check in failed if check in REVISION_STAGE_MAP}
+    if not stages:
+        return None
+    order = {name: index for index, name in enumerate(STAGES)}
+    return sorted(stages, key=lambda name: order[name])
 
 
 def run_monitor(*, as_of, llm_mode: str, config: dict, **kwargs):

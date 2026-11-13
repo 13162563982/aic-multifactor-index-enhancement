@@ -1,0 +1,23 @@
+{
+  "as_of": "2024-12-31",
+  "checks": [
+    {
+      "detail": "max panel date 2024-12-31 <= as_of 2024-12-31",
+      "id": "max_panel_date_le_as_of",
+      "status": "pass"
+    },
+    {
+      "detail": "66 fundamentals rows available on or before 2024-12-31",
+      "id": "notice_date_le_as_of",
+      "status": "pass"
+    },
+    {
+      "detail": "signal uses only prices on or before the decision date (reference implementation)",
+      "id": "future_perturbation_test",
+      "status": "pass"
+    }
+  ],
+  "fundamentals_available_as_of": 66,
+  "max_panel_date": "2024-12-31",
+  "violations": []
+}

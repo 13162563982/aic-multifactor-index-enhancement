@@ -1,0 +1,278 @@
+{
+  "baseline": {
+    "_path": "eval/baseline_v1.0.0.json",
+    "baseline_id": "baseline_v1.0.0",
+    "data_scope": "mini_fixture",
+    "evidence_mode": "fixture",
+    "frozen": {
+      "as_of": "2024-12-31",
+      "config_hash": "17f877d54c68609dd404607cefbf5450b94994fe0cfe970e5c5787fa189551c5",
+      "initial_capital": 100000000.0,
+      "llm_mode": "replay",
+      "prompt_hashes": {},
+      "run_id": "demo-baseline-2024-12-31",
+      "seed": 0,
+      "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+      "workflow_version": "1.0.0"
+    },
+    "metrics": {
+      "annualized_excess_return": 0.229174302886324,
+      "annualized_return": 0.2074978583049607,
+      "annualized_volatility": 0.11963773415787071,
+      "benchmark_cumulative_return": -0.06558219899368978,
+      "cumulative_return": 0.7924944069,
+      "excess_cumulative_return": 0.9183007911124919,
+      "information_ratio": 1.0530839865112542,
+      "initial_capital": 100000000.0,
+      "max_drawdown": -0.09834219590148863,
+      "n_days": 781,
+      "n_returns": 780,
+      "rebalance_count": 35,
+      "sharpe": 1.7343847220572746,
+      "tracking_error": 0.21762205657076986,
+      "turnover": 2.608201417461555
+    },
+    "version": "v1.0.0"
+  },
+  "candidate": {
+    "as_of": "2024-12-31",
+    "config_hash": "e658421564c3cf5e160595fec7148b43264cda1347de0ba501fd609546f627a3",
+    "config_overrides": {
+      "strategy.demo.rebalance": "weekly"
+    },
+    "llm_mode": "replay",
+    "metrics": {
+      "annualized_excess_return": 0.21629867581210305,
+      "annualized_return": 0.19462223123073974,
+      "annualized_volatility": 0.12015076945018413,
+      "benchmark_cumulative_return": -0.06558219899368978,
+      "cumulative_return": 0.7339919297999999,
+      "end_date": "2024-12-31",
+      "excess_cumulative_return": 0.8556923122960605,
+      "information_ratio": 0.9926410412311931,
+      "initial_capital": 100000000.0,
+      "max_drawdown": -0.09868661149877178,
+      "n_days": 781,
+      "n_returns": 780,
+      "rebalance_count": 153,
+      "sharpe": 1.6198167695582866,
+      "start_date": "2022-01-04",
+      "tracking_error": 0.21790220918512834,
+      "turnover": 5.842724220713357
+    },
+    "prompt_dir": "eval/cases/rejected_v1.2.0/prompts",
+    "prompt_hashes": {
+      "researcher.md": "d81a4b4fe15d3a71bbe425d49b1e0f0f39a61d0d76f9658a611c2035f0633a98"
+    },
+    "run_dir": "eval/cases/rejected_v1.2.0/candidate_run",
+    "run_id": "demo-rejected-2024-12-31",
+    "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+    "verification_verdict": "PASS",
+    "version": "v1.2.0"
+  },
+  "case_id": "rejected_v1.2.0",
+  "config_changes": [
+    {
+      "baseline": "Monthly rebalance, 15-day reversal signal, 3% active tilt.",
+      "candidate": "Candidate v1.2.0: weekly rebalance (turnover regression).",
+      "expected": false,
+      "key": "strategy.demo.description",
+      "watched": false
+    },
+    {
+      "baseline": "monthly",
+      "candidate": "weekly",
+      "expected": false,
+      "key": "strategy.demo.rebalance",
+      "watched": false
+    },
+    {
+      "baseline": "baseline",
+      "candidate": "rejected",
+      "expected": false,
+      "key": "strategy.demo.variant",
+      "watched": false
+    }
+  ],
+  "created_at_utc": "2025-01-01T00:00:00+00:00",
+  "decision": "reject",
+  "decision_id": "eval-rejected_v1.2.0-demo-rejected-2024-12-31",
+  "evidence": {
+    "baseline_path": "eval/baseline_v1.0.0.json",
+    "candidate_run_dir": "eval/cases/rejected_v1.2.0/candidate_run",
+    "case_dir": "eval/cases/rejected_v1.2.0",
+    "hard_gate_overrides": {}
+  },
+  "hard_gates": [
+    {
+      "detail": "pit_audit clean and verification PIT checks pass",
+      "id": "leakage_tests_pass",
+      "status": "pass"
+    },
+    {
+      "detail": "verification verdict PASS",
+      "evidence": {
+        "failed_checks": [],
+        "verdict": "PASS"
+      },
+      "id": "verification_passes",
+      "status": "pass"
+    },
+    {
+      "detail": "two independent builds produced identical content hashes for 18 artifacts",
+      "evidence": {
+        "n_artifacts": 18
+      },
+      "id": "deterministic_replay",
+      "status": "pass"
+    },
+    {
+      "detail": "run completed within budget",
+      "evidence": {
+        "llm_calls": 0,
+        "llm_tokens": 0
+      },
+      "id": "budget_within_limit",
+      "status": "pass"
+    }
+  ],
+  "info_metric_diffs": [
+    {
+      "baseline": 0.2074978583049607,
+      "candidate": 0.19462223123073974,
+      "delta": -0.012875627074220963,
+      "detail": "annualized_return: candidate 0.19462223123073974 vs baseline 0.2074978583049607 (context only)",
+      "metric": "annualized_return",
+      "status": "info"
+    },
+    {
+      "baseline": 0.11963773415787071,
+      "candidate": 0.12015076945018413,
+      "delta": 0.0005130352923134185,
+      "detail": "annualized_volatility: candidate 0.12015076945018413 vs baseline 0.11963773415787071 (context only)",
+      "metric": "annualized_volatility",
+      "status": "info"
+    },
+    {
+      "baseline": 1.7343847220572746,
+      "candidate": 1.6198167695582866,
+      "delta": -0.11456795249898799,
+      "detail": "sharpe: candidate 1.6198167695582866 vs baseline 1.7343847220572746 (context only)",
+      "metric": "sharpe",
+      "status": "info"
+    },
+    {
+      "baseline": 0.7924944069,
+      "candidate": 0.7339919297999999,
+      "delta": -0.058502477100000005,
+      "detail": "cumulative_return: candidate 0.7339919297999999 vs baseline 0.7924944069 (context only)",
+      "metric": "cumulative_return",
+      "status": "info"
+    },
+    {
+      "baseline": -0.06558219899368978,
+      "candidate": -0.06558219899368978,
+      "delta": 0.0,
+      "detail": "benchmark_cumulative_return: candidate -0.06558219899368978 vs baseline -0.06558219899368978 (context only)",
+      "metric": "benchmark_cumulative_return",
+      "status": "info"
+    }
+  ],
+  "metric_diffs": [
+    {
+      "baseline": 0.229174302886324,
+      "candidate": 0.21629867581210305,
+      "delta": -0.012875627074220963,
+      "detail": "annualized_excess_return: candidate 0.216299 vs baseline 0.229174 (delta -0.01288, max allowed degradation 0.005)",
+      "direction": "higher_better",
+      "metric": "annualized_excess_return",
+      "status": "fail",
+      "tolerance": 0.005,
+      "tolerance_key": "annualized_excess_return_max_degradation"
+    },
+    {
+      "baseline": 1.0530839865112542,
+      "candidate": 0.9926410412311931,
+      "delta": -0.06044294528006111,
+      "detail": "information_ratio: candidate 0.992641 vs baseline 1.05308 (delta -0.06044, max allowed degradation 0.1)",
+      "direction": "higher_better",
+      "metric": "information_ratio",
+      "status": "pass",
+      "tolerance": 0.1,
+      "tolerance_key": "information_ratio_max_degradation"
+    },
+    {
+      "baseline": 0.21762205657076986,
+      "candidate": 0.21790220918512834,
+      "delta": 0.0002801526143584865,
+      "detail": "tracking_error: candidate 0.217902 vs baseline 0.217622 (|delta| 0.0002802 <= tolerance 0.01)",
+      "direction": "absolute",
+      "metric": "tracking_error",
+      "status": "pass",
+      "tolerance": 0.01,
+      "tolerance_key": "tracking_error_abs_tolerance"
+    },
+    {
+      "baseline": -0.09834219590148863,
+      "candidate": -0.09868661149877178,
+      "delta": -0.0003444155972831542,
+      "detail": "max_drawdown: candidate -0.0986866 vs baseline -0.0983422 (delta -0.0003444, max allowed degradation 0.02)",
+      "direction": "higher_better",
+      "metric": "max_drawdown",
+      "status": "pass",
+      "tolerance": 0.02,
+      "tolerance_key": "max_drawdown_max_degradation"
+    },
+    {
+      "baseline": 2.608201417461555,
+      "candidate": 5.842724220713357,
+      "delta": 3.2345228032518025,
+      "detail": "turnover: candidate 5.84272 vs baseline 2.6082 (delta +3.235, max allowed increase 0.1)",
+      "direction": "lower_better",
+      "metric": "turnover",
+      "status": "fail",
+      "tolerance": 0.1,
+      "tolerance_key": "turnover_max_increase"
+    }
+  ],
+  "rationale": "Candidate demo-rejected-2024-12-31 (v1.2.0) was REJECTED against baseline_v1.0.0 (v1.0.0). 4 hard gates: 4 passed, 0 failed. 5 change-control metrics evaluated: 2 failed. Reasons: change-control metric failed: annualized_excess_return: candidate 0.216299 vs baseline 0.229174 (delta -0.01288, max allowed degradation 0.005); change-control metric failed: turnover: candidate 5.84272 vs baseline 2.6082 (delta +3.235, max allowed increase 0.1)",
+  "reasons": [
+    "change-control metric failed: annualized_excess_return: candidate 0.216299 vs baseline 0.229174 (delta -0.01288, max allowed degradation 0.005)",
+    "change-control metric failed: turnover: candidate 5.84272 vs baseline 2.6082 (delta +3.235, max allowed increase 0.1)"
+  ],
+  "schema_version": "1.0.0",
+  "tolerances": {
+    "annualized_excess_return_max_degradation": 0.005,
+    "information_ratio_max_degradation": 0.1,
+    "max_drawdown_max_degradation": 0.02,
+    "tolerance_semantics": {
+      "annualized_excess_return": {
+        "description": "annualized excess return may not degrade by more than this",
+        "direction": "higher_better",
+        "tolerance": "annualized_excess_return_max_degradation"
+      },
+      "information_ratio": {
+        "description": "information ratio may not degrade by more than this",
+        "direction": "higher_better",
+        "tolerance": "information_ratio_max_degradation"
+      },
+      "max_drawdown": {
+        "description": "max drawdown (negative) may not degrade by more than this",
+        "direction": "higher_better",
+        "tolerance": "max_drawdown_max_degradation"
+      },
+      "tracking_error": {
+        "description": "tracking error must stay within this absolute band",
+        "direction": "absolute",
+        "tolerance": "tracking_error_abs_tolerance"
+      },
+      "turnover": {
+        "description": "turnover may not increase by more than this",
+        "direction": "lower_better",
+        "tolerance": "turnover_max_increase"
+      }
+    },
+    "tracking_error_abs_tolerance": 0.01,
+    "turnover_max_increase": 0.1
+  }
+}

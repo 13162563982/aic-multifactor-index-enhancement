@@ -130,6 +130,10 @@ workflow:
       timeout_s: 60
       retries: 0
       human_gate: true
+      # Approval action required before the stage may run. A decision recorded
+      # with `--scope run` (CLI default) satisfies both human gates of a run;
+      # `--scope action` requires a separate approval per action.
+      approval_action: publish_report
       produces: [approval.json]
 
     - name: registry
@@ -138,6 +142,7 @@ workflow:
       timeout_s: 120
       retries: 0
       human_gate: true
+      approval_action: promote_version
       produces: [version_entry.json]
 
   triggers:

@@ -1,0 +1,210 @@
+{
+  "artifact_hashes": {
+    "00_intake/run_request.json": "4f0170531b70f4c63d552da2ddab6f2d71088c1e688b5c0ffe4e125bfcc447ad",
+    "01_hypothesis/hypothesis.json": "05acbee7989c3fc244f26c81348433c5fc9d06d613cc31b5ec99cb4fb33153d7",
+    "01_hypothesis/rationale.md": "1f99ef64ef7267f4540ddeae8a025f85d1a5c86e2745910141e744f627eb20a0",
+    "02_data/benchmark.parquet": "09c29fbd2d8cdeec8913b69674e3b6d97a55abe31141f8df6d117cf8095100ec",
+    "02_data/data_quality.json": "ed8d90a0cd727f87f5ed6e4306663aa22f46bb68f30af8fa4b1d2035fbe36985",
+    "02_data/panel.parquet": "37581aab62ef8e3f93a52be272129f8b58eca5103e5c4adc9496a55ea5085fe0",
+    "02_data/pit_audit.json": "3be19037503d02fa5ad1f0019d9d3dccf3264781267453a6532b0d0e96754b2a",
+    "03_factors/factor_panel.parquet": "41220c529ba0591de7809b753ac91f02517ec351f09f7ec9697e6cd66c990d70",
+    "03_factors/factor_report.json": "ca15aab620e98635a4ec259871995767f9d3a5fba103e0dedac5b58aeea0f07d",
+    "05_backtest/equity_curve.csv": "af0eb6c4389b4741edaaa7563e942ad64fe3c6a8af8d9fcd0574e314de0be1bc",
+    "05_backtest/holdings.parquet": "7a1d0e72d931ef2827bcee19969f03fdae28601360fc5a716395e2d2a8a5b178",
+    "05_backtest/ledger.parquet": "4f3edb8a8b1eb2fd0cdeda03b3a77fec88751ce1b5bdf014a3e24a0d3fae9660",
+    "05_backtest/metrics.json": "603acd4801a836f510aa824c2e06c7010973d9f64c3e4e12bf7ef034b84410fb",
+    "06_robustness/robustness.json": "bccbd430453f552883a24974686753d4f83966274ec242aa71cfc2c46a7e3be3",
+    "06_robustness/robustness_checks.json": "6efc0006c347f592327e9bf36b6413c90691fd4934c00c58ac0eaf7ba68e6f20",
+    "08_portfolio/orders.csv": "855f93cf29c06534500e2f875e9c1845ed36b1c38365ebf15c9a4b3a2f1064d9",
+    "08_portfolio/risk_report.json": "36892cdaaa0c4d2a31a8c0fa44c39bb029f014c91b5b32a51831e4637b4b5a69",
+    "08_portfolio/target_weights.parquet": "895ffc075e450021a1643be5636252a059e6e49d528493cfc0b16c79ce9ee1ef"
+  },
+  "as_of": "2024-12-31",
+  "checks": [
+    {
+      "detail": "18/18 contract artifacts present, parseable and well-formed",
+      "id": "artifact_schema",
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "detail": "18 artifact content hashes computed and match declared hashes",
+      "id": "artifact_hashes",
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "detail": "889 ledger rows reconciled across 153 holdings dates; cash and weights tie out",
+      "details": {
+        "equity_curve_rows": 781,
+        "holdings_dates": 153,
+        "initial_capital": 100000000.0,
+        "max_abs_cash_fraction": 0.03206914803249813,
+        "min_cash": 339.03000000465545,
+        "nav_rows_checked": 400,
+        "trade_rows": 889
+      },
+      "id": "ledger_reconcile",
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "compared": [
+        "annualized_return",
+        "annualized_volatility",
+        "sharpe",
+        "max_drawdown",
+        "annualized_excess_return",
+        "tracking_error",
+        "information_ratio"
+      ],
+      "detail": "7 headline metrics and 4 benchmark metrics reproduced independently within relative tolerance 1e-06 (e.g. annualized_excess_return=0.21629867581210327, tracking_error=0.21790220918512834)",
+      "id": "metrics_recompute",
+      "status": "pass"
+    },
+    {
+      "detail": "all weights <= 0.4, |active| <= 0.1, no leverage and >= 4 names at every rebalance",
+      "id": "weights_bounds",
+      "status": "pass"
+    },
+    {
+      "detail": "industry active weights within +/-0.1 at every rebalance (max |industry active| 0.060009 on 2022-11-04 in 银行)",
+      "id": "industry_neutrality",
+      "status": "pass"
+    },
+    {
+      "detail": "889 trades checked against ST/suspended/limit rules (6 universe names, 4576 price-limit observations); 1 warning(s)",
+      "id": "forbidden_securities",
+      "status": "pass",
+      "warnings": [
+        "1 holding row(s) were suspended on the holding date"
+      ]
+    },
+    {
+      "detail": "889 trades respect T+1 settlement and the frozen trading calendar (781 days)",
+      "id": "t1_tradability",
+      "status": "pass"
+    },
+    {
+      "detail": "all artifact dates <= as_of 2024-12-31; every ledger/holdings price equals the frozen same-date close",
+      "id": "pit_prices",
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "detail": "pit_audit clean (violations=[], max_panel_date=2024-12-31) and no fundamental row available after as_of 2024-12-31 was usable; 1 warning(s)",
+      "id": "pit_fundamentals",
+      "status": "pass",
+      "warnings": [
+        "snapshot contains 6 fundamentals announced after as_of 2024-12-31; they must not be used by data_prep (pit_audit reports no violations)"
+      ]
+    },
+    {
+      "detail": "numeric artifacts contain no wall-clock state; two independent rebuilds are byte-identical; run_request and metrics bind the same config_hash",
+      "id": "determinism_summary",
+      "status": "pass",
+      "warnings": []
+    }
+  ],
+  "discrepancies": [],
+  "recomputed": {
+    "benchmark_metrics": {
+      "annualized_return": -0.021676444581363308,
+      "annualized_volatility": 0.17935887228890954,
+      "cumulative_return": -0.06558219899368978,
+      "end_date": "2024-12-31",
+      "max_drawdown": -0.34488935261550924,
+      "n_days": 781,
+      "n_returns": 780,
+      "sharpe": -0.12085515650682226,
+      "start_date": "2022-01-04"
+    },
+    "initial_capital": 100000000.0,
+    "metrics": {
+      "annualized_excess_return": 0.21629867581210327,
+      "annualized_return": 0.19462223123073996,
+      "annualized_volatility": 0.1201507694501841,
+      "benchmark_cumulative_return": -0.06558219899368978,
+      "cumulative_return": 0.7339919298000002,
+      "end_date": "2024-12-31",
+      "excess_cumulative_return": 0.8556923122960607,
+      "information_ratio": 0.9926410412311941,
+      "max_drawdown": -0.09868661149877178,
+      "n_days": 781,
+      "n_returns": 780,
+      "sharpe": 1.619816769558289,
+      "start_date": "2022-01-04",
+      "tracking_error": 0.21790220918512834
+    },
+    "n_valuation_days": 781,
+    "nav_end": 1.7339919298000002,
+    "nav_hash": "0d7c60baca0b9764d03e2b6d1637db22a989119c867e41596da8360c4d14304c",
+    "nav_start": 1.0,
+    "rebuild_issues": [],
+    "reconciliation": {
+      "equity_curve_rows": 781,
+      "holdings_dates": 153,
+      "initial_capital": 100000000.0,
+      "max_abs_cash_fraction": 0.03206914803249813,
+      "min_cash": 339.03000000465545,
+      "nav_rows_checked": 400,
+      "trade_rows": 889
+    },
+    "turnover": {
+      "annualized_two_way": 1.3485505478808761,
+      "average_one_way_per_rebalance": 0.056189606161703175,
+      "max_two_way_per_rebalance": 0.995244491977845,
+      "trade_dates": 153
+    }
+  },
+  "run_id": "demo-rejected-2024-12-31",
+  "snapshot": {
+    "as_of": "2024-12-31",
+    "path": "tests/fixtures/mini_snapshot",
+    "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7"
+  },
+  "tolerances": {
+    "cash_absolute": 0.01,
+    "metrics_relative": 1e-06,
+    "weights_absolute": 1e-06
+  },
+  "verdict": "PASS",
+  "verifier": {
+    "blocking_checks": [
+      "artifact_schema",
+      "artifact_hashes",
+      "ledger_reconcile",
+      "weights_bounds",
+      "industry_neutrality",
+      "forbidden_securities",
+      "pit_fundamentals",
+      "pit_prices",
+      "determinism_summary",
+      "metrics_recompute",
+      "t1_tradability"
+    ],
+    "checks_failed": 0,
+    "checks_total": 11,
+    "failed_blocking_checks": [],
+    "failed_required_checks": [],
+    "implementation": "aicwf.verify (independent of aicwf.backtest/aicwf.portfolio)",
+    "llm_mode": "replay",
+    "mode": "deterministic_recompute",
+    "name": "independent-verifier",
+    "notes": [
+      "verified 6 frozen snapshot file hashes"
+    ],
+    "required_checks": [
+      "artifact_schema",
+      "artifact_hashes",
+      "ledger_reconcile",
+      "weights_bounds",
+      "industry_neutrality",
+      "forbidden_securities",
+      "pit_fundamentals",
+      "pit_prices",
+      "determinism_summary"
+    ],
+    "version": "1.0.0"
+  }
+}

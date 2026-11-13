@@ -9,24 +9,44 @@ default:
   temperature: 0.1
   top_p: 0.9
   max_tokens: 1600
-  num_ctx: 8192
+  num_ctx: 16384
   timeout_s: 180
   think: false
   format_json: true
   keep_alive: "10m"
+  # Retries apply to 5xx / timeouts / connection resets only; 4xx fails fast.
+  retry:
+    attempts: 3
+    backoff_seconds: [0.5, 1.0, 2.0]
 
 replay:
   cache_dir: evidence/llm_cache
   # Replay must be strict: unseen prompts fail instead of silently calling a model.
   strict: true
+  # Development only: when true (or AICWF_LLM_RECORD=1) a live backend also writes every
+  # new prompt/response pair into cache_dir. Used once to build the committed demo cache.
+  record: false
 
 openai_compat:
   base_url: ""
   api_key_env: AICWF_LLM_API_KEY
   model: ""
   timeout_s: 120
+  # Most OpenAI-compatible servers accept response_format=json_object; set use_response_format
+  # to true when the endpoint supports it, otherwise the JSON contract is prompt-enforced.
+  use_response_format: false
+  retry:
+    attempts: 3
+    backoff_seconds: [1.0, 2.0, 4.0]
+
+# Directory overrides for reusable prompts/skills (the eval harness points these at a
+# candidate prompt set; AICWF_PROMPT_DIR / AICWF_SKILL_DIR take precedence).
+prompts:
+  dir: prompts
+  skill_dir: skills
 
 agent_loop:
   max_tool_rounds: 3
   max_retries_invalid_json: 2
   repair_temperature: 0.0
+  max_read_chars: 12000
