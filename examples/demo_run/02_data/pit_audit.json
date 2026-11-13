@@ -1,0 +1,54 @@
+{
+  "as_of": "2026-11-12",
+  "checks": [
+    {
+      "detail": {
+        "as_of": "2026-11-12",
+        "max_panel_date": "2026-11-12"
+      },
+      "id": "panel_date_cutoff",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "as_of": "2026-11-12",
+        "max_benchmark_date": "2026-11-12"
+      },
+      "id": "benchmark_date_cutoff",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "available_rows": 16582,
+        "estimated_notice_rows": 3,
+        "latest_available_report_date": "2026-09-30"
+      },
+      "id": "fundamentals_notice_dates",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "run_as_of": "2026-11-12",
+        "snapshot_as_of": "2026-11-12"
+      },
+      "id": "snapshot_as_of",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "estimated_rows": 3,
+        "rule": "report_date + 90 days"
+      },
+      "id": "estimated_notice_dates",
+      "status": "warn"
+    }
+  ],
+  "fundamentals_available_as_of": 16582,
+  "fundamentals_estimated_rows": 3,
+  "fundamentals_latest_report_date": "2026-09-30",
+  "max_benchmark_date": "2026-11-12",
+  "max_panel_date": "2026-11-12",
+  "snapshot_as_of": "2026-11-12",
+  "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+  "violations": []
+}

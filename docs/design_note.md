@@ -260,6 +260,23 @@ The division is deliberate and enforced by code, not by convention.
 This asymmetry is the core safety property: the language model can change the *question* and
 the *narrative*, but it cannot change the *measurement* or approve its own output.
 
+### 3.4 When the agent fails: deterministic fallback
+
+The report stage is the one agent stage whose output is part of the approval package. If the
+report-writer fails schema validation after its bounded repairs (for example, it cites a number
+that is not in the verified artifacts, or omits a required disclosure), the stage does not fail
+the whole run and does not quietly accept the text. It composes the research note deterministically
+from the verified artifacts instead: executive summary, hypothesis, data and PIT discipline,
+backtest table, every robustness check with its value and threshold (including failures), the
+realised-versus-target tracking-error gap, the independent verification table, limitations and
+the required disclaimer. The stage records `report_mode: deterministic_fallback` together with
+the failure reason, emits a warning event, and the human reviews the resulting note at the
+approval gate. During the final recorded run the live model produced an acceptable note on its
+third attempt and the fallback was not needed; the fallback path is covered by an offline test.
+
+Similarly, a verification FAIL never reaches the report stage: the run stops with a structured
+critique and an escalation record.
+
 ---
 
 ## 4. Long-running operation
@@ -532,5 +549,32 @@ robustness; portfolio optimisation; controller and state; crash recovery and app
 runtime and prompts; independent verification; evaluation and registry; monitoring; end-to-end
 integration; the real-model run; evidence; tests; design note and diagrams; documentation; final
 packaging. `git log --oneline` in the submitted ZIP shows the full sequence; `git status` is clean.
+
+## 9. The final verified run
+
+The submitted evidence package comes from run `final2-2026-11-12` against the frozen snapshot with
+`snapshot_hash = 8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8` and information
+cutoff 2026-11-12. The run completed all thirteen stages: intake, hypothesis (Qwen3.5 9B, cached),
+data preparation, factor build, factor review (cached), backtest, robustness, risk critique
+(cached), portfolio construction, independent verification (PASS, 11/11 checks), report
+(Qwen3.5 9B), human approval, and registry promotion to v1.0.0. The run used 9 LLM calls within
+the 40-call budget (the extra calls are the two rejected report repairs) and 473 s of the 900 s
+wall-clock budget; the LLM messages themselves carry the backend's token counts in the event
+log, while the persisted budget row records calls and wall clock.
+
+The headline result over 2018-02-01 to 2026-11-12 (106 monthly rebalances) is an annualised
+excess return of 15.94% against the CSI 300, realised tracking error 6.16% against a 3.00%
+ex-ante target, information ratio 2.59, maximum drawdown −23.53% (benchmark −45.60%) and
+annualised one-way turnover 1.65. The robustness suite passes six of seven checks; the seeded
+placebo test fails (p = 1.0000) and the deflated Sharpe ratio is only marginally above its
+threshold (0.9564). The report discloses both, and the risk critic records the placebo failure as
+a data-mining concern. The universe is the current CSI 300 membership, so survivorship and
+reconstitution bias remain; the bias-stress check retains a positive excess return but does not
+remove the bias. These results are research evidence, not a production performance claim.
+
+The artifacts referenced in this note are mirrored in `examples/demo_run/` (reviewable text, JSON,
+tables and charts), and the full audit trail — event log, state export, approval artifact,
+verification table, registry entry and monitor reports — is under `evidence/`. The evidence map
+with exact paths is `docs/evidence_index.md`.
 
 

@@ -1,0 +1,108 @@
+{
+  "as_of": "2026-11-12",
+  "checks": [
+    {
+      "detail": {
+        "configured_minimum": 250,
+        "minimum": 250,
+        "synthetic_fixture": false,
+        "universe_size": 300
+      },
+      "id": "universe_size",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "allowed": false,
+        "duplicate_rows": 0
+      },
+      "id": "duplicate_rows",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "nonpositive_rows": 0,
+        "required": true
+      },
+      "id": "positive_prices",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "expected_cells": 710441,
+        "missing_ratio": 0.009676,
+        "observed_cells": 703567,
+        "threshold": 0.1,
+        "worst_codes": [
+          {
+            "code": "000792.SZ",
+            "missing_ratio": 0.120971
+          },
+          {
+            "code": "300413.SZ",
+            "missing_ratio": 0.098597
+          },
+          {
+            "code": "603986.SH",
+            "missing_ratio": 0.082964
+          },
+          {
+            "code": "601727.SH",
+            "missing_ratio": 0.08229
+          },
+          {
+            "code": "603501.SH",
+            "missing_ratio": 0.073898
+          }
+        ]
+      },
+      "id": "missing_price_ratio",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "as_of": "2026-11-12",
+        "stale_trading_days": 0,
+        "threshold": 5
+      },
+      "id": "stale_trading_days",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "coverage": 1.0,
+        "covered_codes": 300,
+        "minimum": 0.85,
+        "universe_codes": 300
+      },
+      "id": "fundamental_coverage",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "as_of": "2026-11-12",
+        "max_benchmark_date": "2026-11-12",
+        "max_price_date": "2026-11-12"
+      },
+      "id": "as_of_cutoff",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "benchmark_days": 2637,
+        "calendar_days": 2637
+      },
+      "id": "benchmark_calendar",
+      "status": "pass"
+    }
+  ],
+  "coverage": 1.0,
+  "max_date": "2026-11-12",
+  "rows": 710441,
+  "snapshot_as_of": "2026-11-12",
+  "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+  "universe_size": 300,
+  "warnings": [
+    "pit:estimated_notice_dates: {'estimated_rows': 3, 'rule': 'report_date + 90 days'}"
+  ]
+}

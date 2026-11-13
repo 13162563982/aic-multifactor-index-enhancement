@@ -1,0 +1,42 @@
+{
+  "as_of": "2026-11-12",
+  "benchmark": "000300.SH",
+  "budget": {
+    "max_cost_usd": 0.0,
+    "max_llm_calls": 40,
+    "max_tokens_total": 200000,
+    "max_wall_seconds": 900
+  },
+  "config_hash": "1eb68852b0852d7ea40333acb4c54a9faa442492c651ae669dba13041dfb3b78",
+  "data_window": {
+    "end": "2026-11-12",
+    "start": "2016-01-04"
+  },
+  "information_cutoff": "2026-11-12",
+  "llm_mode": "ollama",
+  "prompt_hashes": {
+    "prompts/factor_analyst.md": "416942709fc3253de9903e7cba377607962fb1a1b03e48bafa4a831cbce55088",
+    "prompts/report_writer.md": "bcbd1f1c94cc12d651482a38af5ecd23a38970d4bd46c717e820f6e400e5e98f",
+    "prompts/researcher.md": "44471b5b00f027a8757919e44227bc1752ddd4cdc74e30dba8f0823c40afef1d",
+    "prompts/risk_critic.md": "e858d463bcc7d0f676b6c36a0d4baaa9e53a44655fc9847ac00fe5e425df89a9",
+    "prompts/verifier.md": "7c5027318d0dbdc0bf864cc55070aa6d8a6f542934abbb6d2b81745d3505951a",
+    "skills/factor_diagnostics/SKILL.md": "730f29248afd090e4d5559e202b1f4bd23bfb632e70b9d3d41eca656360805f2",
+    "skills/hypothesis_spec/SKILL.md": "65ded78e419d10234085ae8fdae1ca0f3dd607f8fab305a878c1b2b8fd4846c9",
+    "skills/pit_and_cutoff/SKILL.md": "8e6e15f42370d47fb4180c908770dfafececbabb4f7264d1dc9b3642b09cdaa0",
+    "skills/report_template/SKILL.md": "4881959eff0b88b7b0630be00667c7f23cf3866015db735d92e03a510d008437",
+    "skills/risk_review/SKILL.md": "78957f8fde4bcd98594ae5049a03affe3ccbba51186d9891d8f300688bde8126"
+  },
+  "run_id": "final2-2026-11-12",
+  "seed": 0,
+  "snapshot": "data/snapshots/2026-11-12",
+  "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+  "universe": {
+    "industries": 76,
+    "size": 300,
+    "weight_sum": 1.0
+  },
+  "warnings": [
+    "LLM backend is local Ollama; runs are reproducible only with the replay cache"
+  ],
+  "workflow_version": "1.0.0"
+}

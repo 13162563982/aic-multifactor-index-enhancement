@@ -1,0 +1,31 @@
+{
+  "thesis": "We posit that a tilt toward high-quality earnings (Quality) and low-risk characteristics (Risk) compensates for the benchmark's exposure to speculative momentum and liquidity-driven noise. Specifically, we expect excess return from firms with strong operating cash flow relative to EPS and low realized volatility, as these factors capture fundamental stability and downside protection absent in the CSI 300 index. The mechanism relies on the risk premium of avoiding idiosyncratic crash risk and the behavioral bias against 'boring' high-quality stocks during market stress.",
+  "factor_weights": {
+    "quality_cashflow": 0.25,
+    "low_vol_60d": 0.25,
+    "value_ep": 0.25,
+    "momentum_12_1": 0.25
+  },
+  "rebalance": "monthly",
+  "constraints": {
+    "max_weight": 0.03,
+    "max_active_weight": 0.015,
+    "te_target": 0.03,
+    "turnover_limit": 0.3
+  },
+  "falsification": [
+    "The full-sample RankIC t-statistic for the composite factor must exceed 2.0; failure indicates no statistical edge.",
+    "Excess return after applying 3x transaction costs must remain positive over the backtest horizon; otherwise, the alpha is not economically viable.",
+    "Sign stability: The individual factor ICs must maintain the same sign (positive for long factors, negative for short factors) in at least 70% of rolling 12-month subperiods.",
+    "Deflated Sharpe Ratio must exceed 1.5; if lower, returns are likely driven by common risk factors rather than idiosyncratic skill."
+  ],
+  "information_cutoff": "2026-11-12",
+  "source_limits": [
+    "Research relies exclusively on the frozen snapshot provided (as_of: 2026-11-12).",
+    "No network access or live data feeds are permitted during this stage.",
+    "Fundamental data is treated as point-in-time available only after its announcement date.",
+    "Universe consists of current CSI 300 constituents with survivorship bias caveats noted in the manifest.",
+    "Factor calculations must strictly adhere to the direction signs defined in the catalog.",
+    "No external news or post-cutoff events may influence the hypothesis construction."
+  ]
+}
