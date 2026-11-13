@@ -10,7 +10,8 @@ This script:
 3. verifies the archive contains ``.git/HEAD`` and a non-empty history;
 4. optionally extracts the ZIP to a temporary directory and checks that the
    repository history is intact and the test suite is runnable from the extraction;
-5. scans the repository text files for credential-like strings.
+5. scans the repository text files and the complete Git history (every object, including
+   unreachable ones) for credential-like strings.
 
 Usage:
     python scripts/package_submission.py --dry-run
@@ -29,6 +30,14 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+
+# Repository-wide credential scan (working tree *and* complete Git history), kept next
+# to this script so ``python scripts/package_submission.py`` can import it directly.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import scan_secrets as secret_scanner
+except ImportError:  # pragma: no cover - packaging still works without the helper
+    secret_scanner = None
 
 ROOT = Path(__file__).resolve().parents[1]
 STUDENT_ID = "25210660121"
@@ -208,6 +217,23 @@ def main() -> int:
             print(f"  {hit}")
         return 3
     print("secret scan: clean")
+
+    # Second layer: the assignment also requires the *commit history* to be free of
+    # credentials, so scan every Git object before building the archive.
+    if secret_scanner is None:
+        print("WARNING: history credential scan unavailable (scripts/scan_secrets.py missing)")
+    else:
+        history = secret_scanner.run_scan(ROOT, working_tree=False)
+        git_info = history.get("git") or {}
+        if history.get("total_findings"):
+            print("ERROR: possible credentials found in the repository history:")
+            for finding in history["findings"]:
+                print(f"  - {finding['path']} ({finding['pattern']})")
+            return 3
+        print(
+            "history scan: clean "
+            f"({git_info.get('objects_scanned')} objects, {git_info.get('commits')} commits)"
+        )
 
     out = args.out
     if args.dry_run:
