@@ -112,21 +112,50 @@ def resolve_snapshot_dir(
     return candidates[-1][1]
 
 
+def _registered_run_ids(history_path: Path | None) -> set[str]:
+    """Run ids recorded by promoted releases (the deployed research runs)."""
+
+    if history_path is None or not Path(history_path).exists():
+        return set()
+    try:
+        from aicwf.registry.store import load_history
+
+        history = load_history(history_path, validate=False)
+    except Exception:  # noqa: BLE001
+        return set()
+    run_ids: set[str] = set()
+    for entry in history.get("entries") or []:
+        if str(entry.get("kind")) == "release" and entry.get("run_id"):
+            run_ids.add(str(entry["run_id"]))
+    return run_ids
+
+
 def resolve_run_dir(
     *,
     as_of: str,
     run_dir: Path | str | None = None,
     runs_root: Path | str | None = None,
+    registered_run_ids: set[str] | None = None,
 ) -> Path | None:
     if run_dir:
         return Path(run_dir)
     root = Path(runs_root) if runs_root else DEFAULT_RUNS_ROOT
     if not root.exists():
         return None
+    # Only consider runs that actually produced the artifacts monitoring consumes
+    # (avoids transient / replay-check run records that may exist without output).
+    required_artifacts = (
+        ("05_backtest", "metrics.json"),
+        ("05_backtest", "equity_curve.csv"),
+        ("05_backtest", "holdings.parquet"),
+        ("03_factors", "factor_panel.parquet"),
+    )
     candidates: list[tuple[str, str, Path]] = []
     for path in root.iterdir():
         request_path = path / "00_intake" / "run_request.json"
         if not path.is_dir() or not request_path.exists():
+            continue
+        if not all((path / stage / name).exists() for stage, name in required_artifacts):
             continue
         try:
             request = read_json(request_path)
@@ -139,6 +168,13 @@ def resolve_run_dir(
             candidates.append((candidate_as_of, path.name, path))
     if not candidates:
         return None
+    # Prefer a run that was actually promoted to the registry (the deployed
+    # release), so ad-hoc replay/verification runs cannot hijack monitoring.
+    registered = set(registered_run_ids or ())
+    if registered:
+        promoted = [candidate for candidate in candidates if candidate[1] in registered]
+        if promoted:
+            candidates = promoted
     candidates.sort(key=lambda item: (item[0], item[1]))
     return candidates[-1][2]
 
@@ -552,7 +588,33 @@ def run_monitor(
         trigger_report["type"] = trigger
         trigger_report["new_data"] = trigger == "new_data"
 
-    resolved_run = resolve_run_dir(as_of=as_of_iso, run_dir=run_dir, runs_root=runs_root)
+    # Registry-promoted runs are preferred so ad-hoc replay/verification runs do not
+    # hijack the monthly monitoring attribution.
+    registry_cfg: Mapping[str, Any] = {}
+    for candidate in (
+        (gates_config.get("registry") if isinstance(gates_config.get("registry"), Mapping) else None),
+        (
+            ((gates_config.get("change_control") or {}).get("registry"))
+            if isinstance(gates_config.get("change_control"), Mapping)
+            and isinstance((gates_config.get("change_control") or {}).get("registry"), Mapping)
+            else None
+        ),
+    ):
+        if candidate:
+            registry_cfg = candidate
+            break
+    history_value = registry_cfg.get("versions_file") if registry_cfg else None
+    history_path = None
+    if history_value:
+        history_path = Path(str(history_value))
+        if not history_path.is_absolute():
+            history_path = PROJECT_ROOT / history_path
+    resolved_run = resolve_run_dir(
+        as_of=as_of_iso,
+        run_dir=run_dir,
+        runs_root=runs_root,
+        registered_run_ids=_registered_run_ids(history_path),
+    )
     artifacts = _load_run_artifacts(resolved_run)
     previous_run_missing = artifacts.get("run_id") is None
     previous_run_id = previous_run_id or (previous_monitor or {}).get("run_id") or artifacts.get("run_id")

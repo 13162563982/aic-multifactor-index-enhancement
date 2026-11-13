@@ -14,11 +14,14 @@ from aicwf.eval.baseline import (  # noqa: F401 - re-exported public surface
     load_baseline,
     refresh_baseline,
 )
+from aicwf.eval.replay import build_replay_evidence, load_replay_evidence  # noqa: F401
 from aicwf.eval.runner import run_eval  # noqa: F401
 
 __all__ = [
     "build_baseline_from_run",
+    "build_replay_evidence",
     "load_baseline",
+    "load_replay_evidence",
     "refresh_baseline",
     "run_eval",
 ]

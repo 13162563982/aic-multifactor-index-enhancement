@@ -401,10 +401,45 @@ def test_cli_candidate_alias(workspace: dict, tmp_path: Path) -> None:
 
 
 def test_committed_baseline_loads() -> None:
+    """The committed baseline must be a valid, meaningfully frozen baseline.
+
+    It is now the REAL-data baseline (frozen from outputs/runs/final-2026-11-12,
+    snapshot 8ab22713...); the earlier fixture-backed placeholder is preserved as
+    eval/baseline_v1.0.0.fixture.json for offline regression.
+    """
+
     path = PROJECT_ROOT / "eval" / "baseline_v1.0.0.json"
     if not path.exists():
-        pytest.skip("committed fixture baseline not generated yet")
+        pytest.skip("committed baseline not generated yet")
     baseline = load_baseline(path)
-    assert baseline["evidence_mode"] == "fixture"
-    assert baseline["frozen"]["snapshot_hash"]
+    frozen = baseline["frozen"]
+    assert baseline["baseline_id"] == "baseline_v1.0.0"
+    assert baseline["version"] == "v1.0.0"
+    assert baseline["evidence_mode"] in {"fixture", "real"}
+    assert frozen["as_of"]
+    assert frozen["snapshot_hash"]
+    assert frozenset(baseline["hard_gates"]) == frozenset(
+        {"leakage_tests_pass", "verification_passes", "deterministic_replay", "budget_within_limit"}
+    )
+    assert set(baseline["tolerances"]) >= {
+        "annualized_excess_return_max_degradation",
+        "information_ratio_max_degradation",
+        "tracking_error_abs_tolerance",
+        "max_drawdown_max_degradation",
+        "turnover_max_increase",
+    }
     assert baseline["metrics"]["annualized_excess_return"] is not None
+    assert baseline["metrics"]["tracking_error"] is not None
+    assert (baseline.get("verification") or {}).get("verdict") == "PASS"
+    if baseline["evidence_mode"] == "real":
+        assert baseline["data_scope"] == "real_csi300"
+        assert frozen["snapshot_hash"] == (
+            "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8"
+        )
+        assert frozen["as_of"] == "2026-11-12"
+        assert frozen["prompt_hashes"]  # real prompts are pinned
+    fixture_path = PROJECT_ROOT / "eval" / "baseline_v1.0.0.fixture.json"
+    if fixture_path.exists():
+        fixture_baseline = load_baseline(fixture_path)
+        assert fixture_baseline["evidence_mode"] == "fixture"
+        assert fixture_baseline["metrics"]["annualized_excess_return"] is not None

@@ -50,6 +50,7 @@ def construct_index_enhancement_weights(
     current_weights: pd.Series,
     tradable: pd.Series,
     constraints: Mapping[str, Any],
+    tilt_mask: pd.Series | None = None,
     te_target: float | None = None,
     min_holding: pd.Series | None = None,
     lot: int = 100,
@@ -72,15 +73,25 @@ def construct_index_enhancement_weights(
     if float(wb.sum()) <= 0:
         raise ValueError("benchmark proxy weights sum to zero")
     wb = wb / float(wb.sum())
-    alpha_values = _series(alpha)
-    spread = float(alpha_values.std(ddof=0))
-    if spread > 0:
-        alpha_values = (alpha_values - float(alpha_values.mean())) / spread
     sigma_values = _series(sigma).clip(lower=0.05)
+    # Current weights are used at their *absolute* scale (sum <= 1 when there is
+    # cash): re-normalising them would inflate every target and make the portfolio
+    # buy more of carried positions every month (the newcomer over-weight bug).
     current = _series(current_weights)
-    current_total = float(current.sum())
-    current = current / current_total if current_total > 0 else current
     tradeable = pd.Series(tradable, dtype=bool).reindex(codes).fillna(False).astype(bool)
+    if tilt_mask is None:
+        tilt = tradeable
+    else:
+        tilt = pd.Series(tilt_mask, dtype=bool).reindex(codes).fillna(False).astype(bool) & tradeable
+    alpha_raw = _series(alpha)
+    alpha_values = pd.Series(0.0, index=codes)
+    tilt_values = tilt.to_numpy(dtype=bool)
+    if tilt_values.any():
+        spread = float(alpha_raw[tilt_values].std(ddof=0))
+        if spread > 0:
+            alpha_values[tilt_values] = (alpha_raw[tilt_values] - float(alpha_raw[tilt_values].mean())) / spread
+        else:
+            alpha_values[tilt_values] = 0.0
     industry_values = (
         pd.Series(industry, dtype=object).reindex(codes).fillna("UNKNOWN").astype(str).tolist()
     )
@@ -94,11 +105,18 @@ def construct_index_enhancement_weights(
     weight_margin = float(constraints.get("weight_margin", 0.985))
     target_te = float(te_target if te_target is not None else constraints.get("te_target", 0.05))
 
+    price_values = pd.Series(prices, dtype=float).reindex(codes).to_numpy(dtype=float)
+    has_price = np.isfinite(price_values) & (price_values > 0)
+    market_tradable = tradeable.to_numpy(dtype=bool) & has_price
     upper_bound = np.minimum(max_weight * weight_margin, wb.to_numpy() + max_active * weight_margin)
     lower_bound = np.maximum(wb.to_numpy() - max_active * weight_margin, 0.0)
+    # Only names that can be priced *and* are in the index are adjustable; a held
+    # name without a price (rare) is pinned at its current weight.
+    upper_bound = np.where(market_tradable, upper_bound, 0.0)
+    lower_bound = np.where(market_tradable, lower_bound, 0.0)
     if min_holding is not None:
         floor = pd.Series(min_holding, dtype=float).reindex(codes).fillna(0.0).to_numpy()
-        floor = np.where(np.isfinite(floor), floor, 0.0)
+        floor = np.where(np.isfinite(floor), np.where(market_tradable, floor, 0.0), 0.0)
         floor_extra = np.where(floor <= upper_bound, np.maximum(floor - lower_bound, 0.0), 0.0)
     else:
         floor_extra = np.zeros(len(codes))
@@ -113,14 +131,16 @@ def construct_index_enhancement_weights(
         upper_bound,
     )
 
-    # Untradable names are fixed at the current holding; names outside the
-    # benchmark proxy but tradable are forced to zero (exit).
-    tradeable_values = tradeable.to_numpy()
     current_values = current.to_numpy(dtype=float)
-    non_member = wb.to_numpy(dtype=float) <= 0.0
-    lower_final = np.where(tradeable_values, lower_bound, current_values)
-    upper_final = np.where(tradeable_values, upper_bound, current_values)
-    forced_exit = tradeable_values & non_member
+    wb_values = wb.to_numpy(dtype=float)
+    non_member = wb_values <= 0.0
+    # Names that cannot be priced are pinned at the current holding (cannot trade);
+    # everybody else is adjustable inside the caps, so an ineligible newcomer is
+    # clamped back to its benchmark proxy weight instead of being carried at the
+    # compounded holding level.
+    lower_final = np.where(market_tradable, lower_bound, current_values)
+    upper_final = np.where(market_tradable, upper_bound, current_values)
+    forced_exit = market_tradable & non_member
     lower_final = np.where(forced_exit, 0.0, lower_final)
     upper_final = np.where(forced_exit, 0.0, upper_final)
     # Keep the fixed block + minimum lots feasible for full investment.
@@ -148,14 +168,17 @@ def construct_index_enhancement_weights(
         active = (tilt_k * alpha_values).clip(-max_active * weight_margin, max_active * weight_margin)
         raw = wb + active
         raw_values = raw.to_numpy(dtype=float)
-        raw_values = np.where(tradeable_values, raw_values, current_values)
+        raw_values = np.where(market_tradable, raw_values, current_values)
         projection = project(raw_values)
         weights = pd.Series(projection.weights, index=codes, dtype=float)
-        held = int(((weights > 1e-8) & tradeable_values).sum() + ((current_values > 1e-8) & ~tradeable_values).sum())
+        held = int(
+            ((weights > 1e-8) & market_tradable).sum()
+            + ((current_values > 1e-8) & ~market_tradable).sum()
+        )
         info = {
             "projection_status": projection.status,
             "industry_active_max": float(projection.max_abs_industry_active),
-            "n_eligible": int(tradeable_values.sum()),
+            "n_eligible": int(market_tradable.sum()),
             "n_held": held,
             "tilt_scale": float(tilt_k),
             "constraints_feasible": True,

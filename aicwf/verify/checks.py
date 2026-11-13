@@ -656,8 +656,17 @@ def check_artifact_hashes(ctx: CheckContext) -> dict[str, Any]:
         if manifest_snapshot_hash and request_snapshot_hash and str(manifest_snapshot_hash) != str(request_snapshot_hash):
             errors.append(
                 "run_request.snapshot_hash does not match the frozen snapshot manifest "
-                f"({str(request_snapshot_hash)[:12]}... vs {str(manifest_snapshot_hash)[:12]}...)"
+                f"({str(request_snapshot_hash)[:12]}... vs {str(manifest_snapshot_hash)[:12]}...); "
+                "the run was created before the final snapshot freeze and must be restarted"
             )
+        data_quality = ctx.data.get("data_quality")
+        if isinstance(data_quality, dict) and manifest_snapshot_hash:
+            data_prep_snapshot_hash = data_quality.get("snapshot_hash")
+            if data_prep_snapshot_hash and str(data_prep_snapshot_hash) != str(manifest_snapshot_hash):
+                errors.append(
+                    "data_quality.snapshot_hash differs from the frozen snapshot manifest: data_prep used a "
+                    "different snapshot version than the one the run is bound to"
+                )
         if checked:
             ctx.notes.append(f"verified {checked} frozen snapshot file hashes")
         # The snapshot builder defines snapshot_hash = hash_json(files mapping).
@@ -997,13 +1006,25 @@ def check_forbidden_securities(ctx: CheckContext) -> dict[str, Any]:
 
     pct_by_key: dict[tuple[str, str], float] = {}
     prices = snapshot.get("prices")
-    if isinstance(prices, pd.DataFrame) and {"date", "code", "pct_chg"}.issubset(prices.columns):
-        price_frame = prices.copy()
+    trades = normalise_ledger(ledger)
+    trade_keys = sorted({(str(row.date), str(row.code)) for row in trades.itertuples(index=False)})
+    if (
+        isinstance(prices, pd.DataFrame)
+        and {"date", "code", "pct_chg"}.issubset(prices.columns)
+        and trade_keys
+    ):
+        # Only the (date, code) pairs actually traded are needed: avoid building a
+        # 700k-entry dict for a 300-name x 2,600-day history.
+        price_frame = prices[["date", "code", "pct_chg"]].copy()
         price_frame["date"] = _frame_dates(price_frame).to_numpy()
         price_frame["code"] = price_frame["code"].astype(str)
-        for row in price_frame.itertuples(index=False):
-            # Eastmoney pct_chg is in percent points; normalise to a fraction.
-            pct_by_key[(str(row.date), row.code)] = float(row.pct_chg) / 100.0
+        latest = price_frame.drop_duplicates(subset=["date", "code"], keep="last")
+        lookup = latest.set_index(["date", "code"])["pct_chg"].astype(float) / 100.0
+        # Eastmoney pct_chg is in percent points; normalise to a fraction.
+        selected = lookup.reindex(pd.MultiIndex.from_tuples(trade_keys, names=["date", "code"]))
+        for key, value in selected.items():
+            if value is not None and not pd.isna(value):
+                pct_by_key[(str(key[0]), str(key[1]))] = float(value)
 
     suspended_keys: set[tuple[str, str]] = set()
     if isinstance(panel, pd.DataFrame) and {"date", "code", "suspended"}.issubset(panel.columns):
@@ -1017,7 +1038,6 @@ def check_forbidden_securities(ctx: CheckContext) -> dict[str, Any]:
 
     errors: list[str] = []
     warnings: list[str] = []
-    trades = normalise_ledger(ledger)
     for row in trades.itertuples(index=False):
         day = str(row.date)
         code = str(row.code)
@@ -1048,11 +1068,16 @@ def check_forbidden_securities(ctx: CheckContext) -> dict[str, Any]:
                 f"{len(st_held)} holding row(s) are ST or became ST after entry "
                 f"(e.g. {st_held.iloc[0]['code']} on {st_held.iloc[0]['date']}); no new buys are allowed"
             )
-        suspended_held = holdings_frame[
-            holdings_frame.apply(lambda row: (str(row["date"]), str(row["code"])) in suspended_keys, axis=1)
+        suspended_held = [
+            (str(day), str(code))
+            for day, code in zip(holdings_frame["date"].tolist(), holdings_frame["code"].tolist())
+            if (str(day), str(code)) in suspended_keys
         ]
-        if len(suspended_held):
-            warnings.append(f"{len(suspended_held)} holding row(s) were suspended on the holding date")
+        if suspended_held:
+            warnings.append(
+                f"{len(suspended_held)} holding row(s) were suspended on the holding date "
+                f"(e.g. {suspended_held[0][1]} on {suspended_held[0][0]})"
+            )
 
     if errors:
         return _result(
@@ -1093,27 +1118,28 @@ def check_t1_tradability(ctx: CheckContext) -> dict[str, Any]:
         if {"buy", "sell"} <= sides:
             errors.append(f"{day} {code}: bought and sold on the same trading day (T+1 violation)")
 
-    # A sell can only consume shares acquired on a strictly earlier date.
+    # A sell can only consume shares acquired on a strictly earlier date.  Walk each
+    # code once (O(n log n) after the sort) instead of scanning the whole ledger per sell.
+    by_code: dict[str, list[Any]] = {}
     for row in trades.itertuples(index=False):
-        if row.side != "sell":
-            continue
-        day = str(row.date)
-        code = str(row.code)
-        prior_buys = 0.0
-        prior_sells = 0.0
-        for other in trades.itertuples(index=False):
-            if str(other.code) != code or str(other.date) >= day:
-                continue
-            if str(other.side) == "buy":
-                prior_buys += float(other.shares)
-            else:
-                prior_sells += float(other.shares)
-        available = prior_buys - prior_sells
-        if float(row.shares) > available + 1e-6:
-            errors.append(
-                f"{day} {code}: sell of {float(row.shares):.4f} shares exceeds the "
-                f"T+1 available position {available:.4f}"
-            )
+        by_code.setdefault(str(row.code), []).append(row)
+    for code in sorted(by_code):
+        rows = by_code[code]
+        position = 0.0
+        index = 0
+        while index < len(rows):
+            day = str(rows[index].date)
+            group: list[Any] = []
+            while index < len(rows) and str(rows[index].date) == day:
+                group.append(rows[index])
+                index += 1
+            sells = sum(float(item.shares) for item in group if str(item.side) == "sell")
+            if sells > position + 1e-6:
+                errors.append(
+                    f"{day} {code}: sell of {sells:.4f} shares exceeds the "
+                    f"T+1 available position {position:.4f}"
+                )
+            position += sum(float(item.shares) for item in group if str(item.side) == "buy") - sells
     if trading_dates:
         unknown = sorted({str(row.date) for row in trades.itertuples(index=False)} - trading_dates)
         for day in unknown[:5]:
@@ -1163,41 +1189,51 @@ def check_pit_prices(ctx: CheckContext) -> dict[str, Any]:
         errors.append("no frozen price panel available to verify trade/valuation prices")
     else:
         price_tolerance = 1e-4  # qfq closes are published to at least 4 decimals
+        date_position = {day: index for index, day in enumerate(close_pivot.index.tolist())}
+        code_position = {code: index for index, code in enumerate(close_pivot.columns.tolist())}
+        frozen_values = close_pivot.to_numpy(dtype=float)
+
+        def _lookup_frozen(frame: pd.DataFrame) -> pd.Series:
+            days = frame["date"].map(date_position).to_numpy(dtype=float)
+            codes = frame["code"].map(code_position).to_numpy(dtype=float)
+            result = np.full(len(frame), np.nan, dtype=float)
+            valid = np.isfinite(days) & np.isfinite(codes)
+            if valid.any():
+                result[valid] = frozen_values[days[valid].astype(int), codes[valid].astype(int)]
+            return pd.Series(result, index=frame.index)
+
         ledger = ctx.data.get("ledger")
         if isinstance(ledger, pd.DataFrame) and not ledger.empty:
             trades = normalise_ledger(ledger)
-            for row in trades.itertuples(index=False):
-                day = str(row.date)
-                code = str(row.code)
-                if day not in close_pivot.index or code not in close_pivot.columns:
-                    errors.append(f"ledger trade {day} {code} has no frozen close price")
-                    continue
-                frozen = float(close_pivot.at[day, code])
-                if not math.isfinite(frozen) or frozen <= 0:
-                    errors.append(f"frozen close price for {day} {code} is missing/invalid")
-                    continue
-                if abs(float(row.price) - frozen) > max(price_tolerance, 1e-6 * frozen):
-                    errors.append(
-                        f"ledger trade {day} {code}: execution price {float(row.price):.6f} "
-                        f"!= frozen close {frozen:.6f} (look-ahead/mismatched price)"
-                    )
-                    if len(errors) > 25:
-                        break
+            trades["date"] = _frame_dates(trades).to_numpy()
+            frozen = _lookup_frozen(trades)
+            missing = frozen.isna() | (frozen <= 0)
+            for index in trades.index[missing][:5]:
+                errors.append(
+                    f"ledger trade {trades.at[index, 'date']} {trades.at[index, 'code']} has no valid frozen close price"
+                )
+            mismatch = (
+                (~missing)
+                & ((trades["price"].astype(float) - frozen).abs() > np.maximum(price_tolerance, 1e-6 * frozen))
+            )
+            for index in trades.index[mismatch][:20]:
+                errors.append(
+                    f"ledger trade {trades.at[index, 'date']} {trades.at[index, 'code']}: execution price "
+                    f"{float(trades.at[index, 'price']):.6f} != frozen close {float(frozen.at[index]):.6f} "
+                    "(look-ahead/mismatched price)"
+                )
         holdings = ctx.data.get("holdings")
         if isinstance(holdings, pd.DataFrame) and not holdings.empty:
             frame = holdings.copy()
             frame["date"] = _frame_dates(frame).to_numpy()
-            for row in frame.itertuples(index=False):
-                day = str(row.date)
-                code = str(row.code)
-                if day in close_pivot.index and code in close_pivot.columns:
-                    frozen = float(close_pivot.at[day, code])
-                    if math.isfinite(frozen) and abs(float(row.price) - frozen) > max(price_tolerance, 1e-6 * frozen):
-                        errors.append(
-                            f"holdings {day} {code}: mark {float(row.price):.6f} != frozen close {frozen:.6f}"
-                        )
-                        if len(errors) > 25:
-                            break
+            frozen = _lookup_frozen(frame)
+            valid = frozen.notna() & (frozen > 0)
+            mismatch = valid & ((frame["price"].astype(float) - frozen).abs() > np.maximum(price_tolerance, 1e-6 * frozen))
+            for index in frame.index[mismatch][:20]:
+                errors.append(
+                    f"holdings {frame.at[index, 'date']} {frame.at[index, 'code']}: mark "
+                    f"{float(frame.at[index, 'price']):.6f} != frozen close {float(frozen.at[index]):.6f}"
+                )
     snapshot = load_snapshot(ctx.snapshot_dir)
     if not snapshot.get("error"):
         prices = snapshot.get("prices")

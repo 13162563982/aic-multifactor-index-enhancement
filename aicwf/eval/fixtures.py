@@ -627,7 +627,12 @@ def _simulate(
             }
         )
 
-    equity = pd.DataFrame(equity_rows)
+    equity_full = pd.DataFrame(equity_rows)
+    # Match the production backtest convention: the equity curve starts at the first
+    # T+1 execution date (no flat-cash pre-inception period), nav is not re-based, and
+    # benchmark_nav keeps its full-history normalisation.
+    first_execution = str(ledger[0]["date"]) if ledger else str(equity_full["date"].iloc[0])
+    equity = equity_full[equity_full["date"].astype(str) >= first_execution].reset_index(drop=True)
     equity["daily_return"] = equity["nav"].pct_change()
     equity["drawdown"] = equity["nav"] / equity["nav"].cummax() - 1.0
     equity["active_nav"] = equity["nav"] / equity["benchmark_nav"]
@@ -636,7 +641,8 @@ def _simulate(
         ["date", "nav", "benchmark_nav", "active_nav", "daily_return", "benchmark_return", "excess_return", "drawdown"]
     ].reset_index(drop=True)
 
-    metrics, benchmark_metrics = _equity_metrics(equity)
+    metrics, _window_benchmark = _equity_metrics(equity)
+    benchmark_metrics = _full_benchmark_metrics(equity_full["benchmark_nav"])
     metrics["turnover"] = _annualised_turnover(trade_notionals, value_before_by_date, rebalance)
     metrics["rebalance_count"] = rebalance_count
     metrics["initial_capital"] = capital
@@ -660,6 +666,34 @@ def _simulate(
 # ---------------------------------------------------------------------------
 # Metrics (documented formulas; kept independent of aicwf.verify at runtime)
 # ---------------------------------------------------------------------------
+
+
+def _full_benchmark_metrics(benchmark_nav_series: pd.Series) -> dict[str, Any]:
+    """Full-history benchmark metrics (matches the verifier's benchmark_metrics)."""
+
+    bench = pd.Series(benchmark_nav_series).dropna().astype(float)
+    if len(bench) < 2:
+        return {"start_date": None, "end_date": None, "n_days": int(len(bench)), "n_returns": 0,
+                "cumulative_return": None, "annualized_return": None, "annualized_volatility": None,
+                "sharpe": None, "max_drawdown": None}
+    returns = bench.pct_change().dropna()
+    n_returns = int(len(returns))
+    growth = float(bench.iloc[-1] / bench.iloc[0])
+    ann = float(growth ** (252.0 / n_returns) - 1.0) if n_returns > 0 and growth > 0 else float("nan")
+    vol = float(returns.std(ddof=1) * math.sqrt(252)) if n_returns > 1 else float("nan")
+    sharpe = float(ann / vol) if vol and math.isfinite(vol) and vol > 0 else float("nan")
+    mdd = float((bench / bench.cummax() - 1.0).min())
+    return {
+        "start_date": str(bench.index[0]),
+        "end_date": str(bench.index[-1]),
+        "n_days": int(len(bench)),
+        "n_returns": n_returns,
+        "cumulative_return": float(growth - 1.0),
+        "annualized_return": ann,
+        "annualized_volatility": vol,
+        "sharpe": sharpe,
+        "max_drawdown": mdd,
+    }
 
 
 def _equity_metrics(equity: pd.DataFrame) -> tuple[dict[str, Any], dict[str, Any]]:

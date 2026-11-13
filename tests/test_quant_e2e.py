@@ -175,6 +175,39 @@ def test_mini_fixture_pipeline_end_to_end():
 
 
 # ---------------------------------------------------------------------------
+# Inception / window alignment
+# ---------------------------------------------------------------------------
+
+
+def test_equity_curve_starts_at_first_rebalance():
+    """The return series must start at the first execution date, not data start."""
+
+    pipeline = sup.cached_fixture_pipeline()
+    ledger = pd.read_parquet(sup.artifact_path(pipeline, "backtest", "ledger"))
+    equity = pd.read_csv(sup.artifact_path(pipeline, "backtest", "equity_curve"))
+    metrics_doc = json.loads(
+        sup.artifact_path(pipeline, "backtest", "metrics").read_text(encoding="utf-8")
+    )
+    first_execution = str(ledger["date"].min())
+    assert metrics_doc["metrics"]["start_date"] == first_execution
+    assert equity["date"].iloc[0] == first_execution
+    assert equity["date"].iloc[-1] == metrics_doc["metrics"]["end_date"]
+
+    panel_dates = sorted(pipeline["market"]["panel"]["date"].astype(str).unique().tolist())
+    expected_window = [day for day in panel_dates if first_execution <= day <= "2024-12-31"]
+    assert len(equity) == len(expected_window)
+    assert equity["date"].tolist() == expected_window
+    benchmark = pd.read_parquet(pipeline["paths"]["benchmark"])
+    benchmark["date"] = benchmark["date"].astype(str).str[:10]
+    benchmark_window = benchmark[
+        (benchmark["date"] >= first_execution) & (benchmark["date"] <= "2024-12-31")
+    ]
+    assert len(equity) == len(benchmark_window)
+    assert int(metrics_doc["metrics"]["n_days"]) == len(expected_window)
+    assert int(metrics_doc["metrics"]["n_returns"]) == len(expected_window) - 1
+
+
+# ---------------------------------------------------------------------------
 # Determinism and reproducibility
 # ---------------------------------------------------------------------------
 
@@ -238,7 +271,10 @@ def test_declared_metrics_match_independent_reconstruction():
         as_of="2024-12-31",
     )
     benchmark_series = benchmark_nav(benchmark)
-    recomputed = compute_performance_metrics(rebuild.nav, benchmark_series)
+    # The equity curve (and therefore the declared metrics) starts at the first
+    # execution date; the verifier truncates its ledger rebuild the same way.
+    first_execution = str(ledger["date"].min())
+    recomputed = compute_performance_metrics(rebuild.nav.loc[first_execution:], benchmark_series)
     assert compare_metrics(metrics_doc["metrics"], recomputed, rel_tol=1e-9) == []
     recomputed_benchmark = compute_benchmark_metrics(benchmark_series)
     assert compare_metrics(

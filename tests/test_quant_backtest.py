@@ -143,11 +143,13 @@ def test_ledger_holdings_and_nav_reconcile_with_independent_rebuild():
     assert len(ledger) > 0
     rebuild = rebuild_from_ledger(ledger, panel, benchmark=benchmark, initial_capital=capital, as_of="2024-12-31")
     assert not rebuild.issues
-    # Cash is never negative and NAV starts at 1.0 exactly.
+    # Cash is never negative and the ledger rebuild starts at 1.0 before inception.
     assert float(rebuild.path["cash"].min()) >= -1e-6
     assert float(rebuild.nav.iloc[0]) == pytest.approx(1.0)
-    # Declared metrics are reproduced independently.
-    recomputed = compute_performance_metrics(rebuild.nav, benchmark_nav(benchmark))
+    # Declared metrics are reproduced independently from the *inception* NAV path
+    # (the verifier truncates its rebuild at the first execution date).
+    first_execution = str(ledger["date"].min())
+    recomputed = compute_performance_metrics(rebuild.nav.loc[first_execution:], benchmark_nav(benchmark))
     discrepancies = compare_metrics(metrics_doc["metrics"], recomputed, rel_tol=1e-9)
     assert discrepancies == []
     # Full accounting reconciliation (ledger <-> holdings <-> equity curve).
@@ -290,6 +292,119 @@ def test_limit_down_blocks_sells(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Index-newcomer regression (constraint breach found on the live real run)
+# ---------------------------------------------------------------------------
+
+
+def _newcomer_market():
+    """Synthetic market with one factor-ineligible newcomer carrying a large weight.
+
+    Mirrors the live-run failure mode: a current index member that is not yet
+    factor-eligible (listed < 250 trading days) has a large benchmark-proxy weight
+    and rallies strongly, so carrying it at the compounded holding level would
+    breach the weight / active / industry caps until it becomes eligible.
+    """
+
+    market = sup.make_market(n_codes=40, n_months=36)
+    universe = market["universe"].copy()
+    newcomer = market["codes"][0]
+    universe["weight"] = 1.0 / (len(universe) - 1)
+    universe.loc[universe["code"] == newcomer, "weight"] = 0.15
+    universe["weight"] = universe["weight"] / universe["weight"].sum()
+    panel = market["panel"].copy()
+    mask = panel["code"] == newcomer
+    # Never seasoned: stays factor-ineligible for the whole backtest.
+    panel.loc[mask, "listed_days"] = 30.0
+    # Persistent strong rally: a carried position would compound month after month.
+    positions = panel.loc[mask].sort_values("date").index
+    factors = np.power(1.012, np.arange(len(positions)))
+    panel.loc[positions, "close"] = panel.loc[positions, "close"].to_numpy() * factors
+    market = dict(market)
+    market["universe"] = universe
+    market["panel"] = panel
+    market["newcomer"] = newcomer
+    return market
+
+
+def test_newcomer_holdings_respect_all_published_caps(tmp_path):
+    market = _newcomer_market()
+    newcomer = market["newcomer"]
+    config_overrides = {
+        "universe": {"min_listed_days": 250},
+        "backtest": {
+            "constraints": {
+                "max_weight": 0.05,
+                "max_active_weight": 0.025,
+                "industry_active_limit": 0.03,
+                "benchmark_weight_cap": 0.05,
+                "turnover_limit": 0.60,
+                "min_names": 3,
+            }
+        },
+        "portfolio": {
+            "defaults": {
+                "max_weight": 0.05,
+                "max_active_weight": 0.025,
+                "te_target": 0.05,
+                "turnover_limit": 0.60,
+            },
+            "constraints_bounds": {
+                "max_weight": [0.005, 0.06],
+                "max_active_weight": [0.001, 0.03],
+                "te_target": [0.01, 0.12],
+                "turnover_limit": [0.05, 1.0],
+            },
+            "benchmark_weight_cap": 0.05,
+        },
+    }
+    hypothesis = sup.make_hypothesis(
+        market,
+        constraints={
+            "max_weight": 0.05,
+            "max_active_weight": 0.025,
+            "te_target": 0.05,
+            "turnover_limit": 0.60,
+        },
+    )
+    ctx, market, paths = sup.make_run_context(
+        tmp_path / "newcomer",
+        market=market,
+        config_overrides=config_overrides,
+        hypothesis=hypothesis,
+    )
+    from aicwf.backtest.stage import run_backtest
+    from aicwf.factors.stage import run_factor_build
+
+    factor_output = run_factor_build(ctx)
+    ctx.register("factor_build", factor_output)
+    # Stage-level audit raises DataQualityError on a breach, so a successful call
+    # already proves the invariants; assert the same numbers verification checks.
+    backtest_output = run_backtest(ctx)
+    holdings = pd.read_parquet(backtest_output.artifacts["holdings"])
+    cfg = ctx.config["strategy"]
+    max_weight = float(cfg["backtest"]["constraints"]["max_weight"])
+    max_active = float(cfg["backtest"]["constraints"]["max_active_weight"])
+    industry_limit = float(cfg["backtest"]["constraints"]["industry_active_limit"])
+    assert len(holdings) > 0
+    assert float(holdings["weight"].max()) <= max_weight + 1e-6
+    assert float(holdings["active_weight"].abs().max()) <= max_active + 1e-6
+    industry_active = holdings.groupby(["date", "industry"])["active_weight"].sum()
+    assert float(industry_active.abs().max()) <= industry_limit + 1e-6
+    # The newcomer is a real holding that is clamped to its benchmark proxy weight,
+    # not carried at a compounded level.
+    newcomer_rows = holdings[holdings["code"] == newcomer]
+    assert len(newcomer_rows) > 0
+    assert float(newcomer_rows["weight"].max()) <= max_weight + 1e-6
+    assert float(newcomer_rows["weight"].max()) <= float(
+        newcomer_rows["benchmark_weight"].max()
+    ) + max_active + 1e-6
+    # The first holdings date is the first execution date and is already compliant.
+    first_date = holdings["date"].min()
+    first_rows = holdings[holdings["date"] == first_date]
+    assert float(first_rows["weight"].max()) <= max_weight + 1e-6
+
+
+# ---------------------------------------------------------------------------
 # Point-in-time invariance and determinism
 # ---------------------------------------------------------------------------
 
@@ -331,7 +446,9 @@ def test_backtest_is_deterministic(tmp_path):
 def test_equity_curve_identities():
     pipeline = sup.cached_fixture_pipeline()
     curve = pd.read_csv(sup.artifact_path(pipeline, "backtest", "equity_curve"))
-    assert float(curve["nav"].iloc[0]) == pytest.approx(1.0)
+    # The curve starts at the first execution date with the post-cost NAV (still
+    # normalised by the initial capital, so it is very close to one).
+    assert abs(float(curve["nav"].iloc[0]) - 1.0) < 0.05
     assert curve["date"].is_monotonic_increasing
     recomputed_return = curve["nav"].pct_change()
     np.testing.assert_allclose(

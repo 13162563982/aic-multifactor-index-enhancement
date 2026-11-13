@@ -191,6 +191,7 @@ def rebuild_from_ledger(
     benchmark: pd.DataFrame | None = None,
     initial_capital: float = 1.0,
     as_of: Any | None = None,
+    collect_positions: bool = False,
 ) -> RebuildResult:
     """Rebuild cash, positions and the daily NAV path from the trade ledger alone.
 
@@ -236,32 +237,39 @@ def rebuild_from_ledger(
     for row in trades.itertuples(index=False):
         trades_by_date.setdefault(str(row.date), []).append(row)
 
-    shares: dict[str, float] = {}
-    last_price: dict[str, float] = {}
+    # Numpy-vectorised valuation: 300 names x 2,600 valuation days must stay fast.
+    codes = list(matrix.columns)
+    code_index = {code: index for index, code in enumerate(codes)}
+    values = matrix.to_numpy(dtype=float, copy=False)
+    shares = np.zeros(len(codes), dtype=float)
+    last_price = np.full(len(codes), np.nan, dtype=float)
     cash = cap
     rows: list[dict[str, Any]] = []
     position_rows: list[dict[str, Any]] = []
     applied: list[dict[str, Any]] = []
     missing_marks = 0
+    issue_budget = 40
 
-    for day in dates:
+    for row_index, day in enumerate(dates):
         for trade in trades_by_date.get(day, []):
             quantity = float(trade.shares)
             if quantity <= 0 or not math.isfinite(quantity):
-                issues.append(f"non-positive shares on {day} {trade.code} {trade.side}")
+                if len(issues) < issue_budget:
+                    issues.append(f"non-positive shares on {day} {trade.code} {trade.side}")
                 continue
             flow = _trade_cash_flow(trade)
             if math.isnan(flow) or math.isinf(flow):
-                issues.append(f"non-finite cash flow on {day} {trade.code} {trade.side}")
+                if len(issues) < issue_budget:
+                    issues.append(f"non-finite cash flow on {day} {trade.code} {trade.side}")
                 continue
-            if trade.side == "buy":
-                shares[trade.code] = shares.get(trade.code, 0.0) + quantity
-            elif trade.side == "sell":
-                shares[trade.code] = shares.get(trade.code, 0.0) - quantity
-            else:
-                issues.append(f"unknown side {trade.side!r} on {day} {trade.code}")
+            if trade.side not in {"buy", "sell"}:
+                if len(issues) < issue_budget:
+                    issues.append(f"unknown side {trade.side!r} on {day} {trade.code}")
                 continue
+            column = code_index.get(str(trade.code))
             cash += flow
+            if column is not None:
+                shares[column] += quantity if trade.side == "buy" else -quantity
             applied.append(
                 {
                     "date": day,
@@ -274,25 +282,32 @@ def rebuild_from_ledger(
                 }
             )
 
-        holdings_value = 0.0
-        n_positions = 0
-        for code, quantity in shares.items():
-            if abs(quantity) < 1e-12:
-                continue
-            close = matrix.at[day, code] if code in matrix.columns else float("nan")
-            if (not math.isfinite(close)) or close <= 0:
-                close = last_price.get(code, float("nan"))
-                if not math.isfinite(close):
-                    missing_marks += 1
-                    continue
-                issues.append(f"missing/zero frozen price for {code} on {day}; carried forward")
-            else:
-                last_price[code] = float(close)
-            holdings_value += quantity * float(close)
-            n_positions += 1
-            position_rows.append(
-                {"date": day, "code": code, "shares": quantity, "price": float(close)}
-            )
+        price_row = values[row_index].astype(float, copy=False)
+        bad = ~np.isfinite(price_row) | (price_row <= 0)
+        if bad.any():
+            carried = np.where(bad, last_price, price_row)
+            held_missing = bad & (np.abs(shares) > 1e-12)
+            if held_missing.any():
+                count = int(held_missing.sum())
+                missing_marks += count
+                if len(issues) < issue_budget:
+                    issues.append(f"{count} position mark(s) missing on {day}; carried forward")
+            price_row = carried
+        valid = np.isfinite(price_row)
+        holdings_value = float(np.dot(shares, np.where(valid, price_row, 0.0)))
+        last_price = np.where(valid, price_row, last_price)
+        held = np.abs(shares) > 1e-12
+        n_positions = int(held.sum())
+        if collect_positions and n_positions:
+            for column in np.flatnonzero(held):
+                position_rows.append(
+                    {
+                        "date": day,
+                        "code": codes[int(column)],
+                        "shares": float(shares[int(column)]),
+                        "price": float(price_row[int(column)]),
+                    }
+                )
         total_value = cash + holdings_value
         rows.append(
             {
@@ -317,7 +332,7 @@ def rebuild_from_ledger(
     return RebuildResult(
         path=path,
         nav=nav,
-        positions=pd.DataFrame(position_rows),
+        positions=pd.DataFrame(position_rows, columns=["date", "code", "shares", "price"]),
         trades=pd.DataFrame(applied),
         initial_capital=cap,
         issues=issues,

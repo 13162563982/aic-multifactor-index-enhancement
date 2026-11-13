@@ -186,12 +186,30 @@ def reconcile_accounting(
     path_value = dict(zip(rebuild.path["date"].tolist(), rebuild.path["total_value"].astype(float).tolist()))
     path_cash = dict(zip(rebuild.path["date"].tolist(), rebuild.path["cash"].astype(float).tolist()))
     holdings_dates = sorted(holdings_frame["date"].unique().tolist())
+    # Build cumulative position snapshots in one pass (O(trades + dates)) instead of
+    # re-scanning the 18k-row ledger once per holdings date.
+    trade_rows = list(trades.itertuples(index=False))
+    position_snapshots: dict[str, dict[str, float]] = {}
+    running_positions: dict[str, float] = {}
+    trade_index = 0
+    for day in holdings_dates:
+        while trade_index < len(trade_rows) and str(trade_rows[trade_index].date) <= day:
+            trade = trade_rows[trade_index]
+            quantity = float(trade.shares)
+            if trade.side == "buy":
+                running_positions[str(trade.code)] = running_positions.get(str(trade.code), 0.0) + quantity
+            elif trade.side == "sell":
+                running_positions[str(trade.code)] = running_positions.get(str(trade.code), 0.0) - quantity
+            trade_index += 1
+        position_snapshots[day] = {
+            code: quantity for code, quantity in running_positions.items() if abs(quantity) > 1e-12
+        }
     min_cash = float(rebuild.path["cash"].min()) if len(rebuild.path) else 0.0
     max_cash_fraction = 0.0
     checked_holdings_dates = 0
 
     for day in holdings_dates:
-        expected_positions = positions_at(trades, day)
+        expected_positions = position_snapshots.get(day, {})
         declared = holdings_frame[holdings_frame["date"] == day]
         checked_holdings_dates += 1
         total_value = path_value.get(day)

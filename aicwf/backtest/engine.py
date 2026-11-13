@@ -396,9 +396,11 @@ class BacktestModel:
             float(values.get("benchmark_weight_cap", values.get("max_weight", 1.0))),
             float(values.get("max_weight", 1.0)),
         ) * weight_margin
-        wb_static = self.benchmark_proxy(cap=benchmark_cap).reindex(codes).fillna(0.0).astype(float)
-        if float(wb_static.sum()) > 0:
-            wb_static = wb_static / float(wb_static.sum())
+        # Benchmark proxy over exactly the available code set: the exact capped
+        # projection guarantees sum(wb)=1 AND wb_i <= cap, so renormalising a
+        # subset can never push a benchmark proxy weight above the name cap.
+        raw_benchmark = self.universe_weights.reindex(codes).fillna(0.0).astype(float)
+        wb_static = common.project_capped_benchmark(raw_benchmark, benchmark_cap)
 
         if scores is not None:
             alpha = scores.reindex(index=[signal_date], columns=self.codes).iloc[0]
@@ -414,20 +416,21 @@ class BacktestModel:
         in_universe = self.in_universe.loc[decision_date].reindex(codes).fillna(False).astype(bool)
         suspended = self.suspended.loc[decision_date].reindex(codes).fillna(True).astype(bool)
         raw_prices = self.close.loc[decision_date].reindex(codes)
-        listed = self.listed_days.loc[decision_date].reindex(codes).astype(float)
-        min_listed = float(self._strategy_value("universe", "min_listed_days", default=0) or 0)
         eligible = (
             self.eligible.reindex(index=[signal_date], columns=codes).iloc[0].fillna(False).astype(bool)
         )
-        listed_values = np.nan_to_num(listed.to_numpy(dtype=float), nan=1e6)
+        # "Tradable" means *the market lets us trade it* (in the index, priced, not
+        # suspended).  Factor eligibility only controls the alpha tilt.  This is what
+        # lets the projection clamp a carried newcomer (listed < 250 days, so not yet
+        # factor-eligible) back inside the weight/active/industry caps instead of
+        # pinning it at a compounded holding level.
         tradable = (
             in_universe.to_numpy(dtype=bool)
             & (~suspended.to_numpy(dtype=bool))
             & np.isfinite(raw_prices.to_numpy(dtype=float))
-            & (listed_values >= min_listed)
-            & eligible.to_numpy(dtype=bool)
             & np.array([code not in excluded for code in codes], dtype=bool)
         )
+        tilt_mask = pd.Series(eligible.to_numpy(dtype=bool) & tradable, index=codes)
 
         capital = float(
             initial_capital
@@ -471,6 +474,7 @@ class BacktestModel:
             sigma=sigma,
             current_weights=current,
             tradable=pd.Series(tradable, index=codes),
+            tilt_mask=tilt_mask,
             constraints=values,
             te_target=te_target,
             min_holding=min_holding,
@@ -614,6 +618,58 @@ class BacktestModel:
                 }
             )
 
+        # Trim *settled* holdings that are above their cap before buying anything.
+        # Shares held from earlier rebalances may be sold under T+1; this repairs a
+        # carried overweight (e.g. a newcomer that was not yet factor-eligible) even
+        # if the target construction could not fully move it.
+        nav_settled = float(cash)
+        for code, shares in positions.items():
+            value_price = _safe_price(valuation_row.get(code))
+            if np.isfinite(value_price):
+                nav_settled += shares * value_price
+        for code in sorted(positions):
+            current = int(positions[code])
+            valuation_price = _safe_price(valuation_row.get(code))
+            upper = float(upper_bounds.get(code, np.inf))
+            if not np.isfinite(valuation_price) or nav_settled <= 0 or not np.isfinite(upper):
+                continue
+            weight = current * valuation_price / nav_settled
+            if weight <= upper:
+                continue
+            allowed, _reason = sellable(code)
+            if not allowed:
+                continue
+            price = _safe_price(price_row.get(code))
+            if not np.isfinite(price):
+                continue
+            excess_shares = int(np.ceil((weight - upper) * nav_settled / price / lot) * lot)
+            quantity = min(current, excess_shares)
+            if quantity <= 0:
+                continue
+            notional = quantity * price
+            cost = cost_model.trade_cost(notional, "sell", costs, adv=float(amount_row.get(code, 0.0)))
+            cash += cost["cash_flow"]
+            positions[code] = current - quantity
+            if positions[code] <= 0:
+                positions.pop(code, None)
+            ledger_rows.append(
+                {
+                    "date": execution_date,
+                    "code": code,
+                    "side": "sell",
+                    "shares": int(quantity),
+                    "price": float(price),
+                    "gross_amount": float(notional),
+                    "commission": float(cost["commission"]),
+                    "stamp_duty": float(cost["stamp_duty"]),
+                    "slippage": float(cost["slippage"]),
+                    "total_cost": float(cost["total_cost"]),
+                    "cash_flow": float(cost["cash_flow"]),
+                    "reason": "bounds_repair_trim",
+                }
+            )
+            warnings["bounds_repair_sells"] = warnings.get("bounds_repair_sells", 0) + 1
+
         # Buys, limited by remaining cash.
         fee_buffer = max(
             0.002,
@@ -638,10 +694,24 @@ class BacktestModel:
             allowed, reason = buyable(code)
             if not allowed:
                 continue
+            # Never let a same-day buy push the holding above its published cap: a
+            # T+1 position cannot be trimmed again today.
+            valuation_price = _safe_price(valuation_row.get(code))
+            upper = float(upper_bounds.get(code, np.inf))
+            if np.isfinite(valuation_price) and np.isfinite(upper) and nav_pre > 0:
+                max_shares = _lot_floor(upper * nav_pre * 0.995 / valuation_price, lot)
+                room = max_shares - current
+                if room <= 0:
+                    warnings["bound_capped_buys"] = warnings.get("bound_capped_buys", 0) + 1
+                    continue
+                if delta > room:
+                    delta = room
+                    warnings["bound_capped_buys"] = warnings.get("bound_capped_buys", 0) + 1
             notional = delta * price
-            if current > 0 and notional < min_trade_notional:
-                warnings["small_trade_skips"] = warnings.get("small_trade_skips", 0) + 1
-                continue
+            # NOTE: the minimum-trade-notional rule is only applied to *partial
+            # sells*.  Skipping small buys would accumulate idle cash and inflate
+            # every remaining weight (breaking the active/industry bounds), which
+            # is far worse than a slightly inefficient order.
             participation = (
                 notional / float(amount_row.get(code, 0.0)) if float(amount_row.get(code, 0.0)) > 0 else 0.0
             )
@@ -796,7 +866,7 @@ class BacktestModel:
             )
             / 1e4,
         )
-        for _ in range(3):
+        for _ in range(30):
             nav = float(cash)
             for code, shares in positions.items():
                 price = _safe_price(valuation_row.get(code))
@@ -855,7 +925,6 @@ class BacktestModel:
                     )
                     warnings["bounds_repair_sells"] = warnings.get("bounds_repair_sells", 0) + 1
                     changed = True
-                    break
                 if weight < lower and benchmark_weight > 0 and cash > 0:
                     deficit_shares = int(np.floor((lower - weight) * nav / price / lot) * lot)
                     affordable = int(
@@ -889,7 +958,6 @@ class BacktestModel:
                     )
                     warnings["bounds_repair_buys"] = warnings.get("bounds_repair_buys", 0) + 1
                     changed = True
-                    break
             if not changed:
                 break
         return cash
@@ -1059,6 +1127,15 @@ class BacktestModel:
     def _build_nav_path(
         self, state_records: Sequence[tuple[int, float, dict[str, int]]], capital: float
     ) -> tuple[pd.Series, pd.Series]:
+        """Build the NAV path from the **first execution date** to ``as_of``.
+
+        The equity curve starts when the strategy first trades: including the
+        pre-inception cash period would report years of flat NAV while the
+        benchmark moves, which distorts annualised returns and tracking error.
+        ``nav`` is still normalised by the initial capital (not re-based) so the
+        independent verifier's ledger rebuild matches value-for-value.
+        """
+
         n_dates = len(self.dates)
         n_codes = len(self.codes)
         positions_matrix = np.zeros((n_dates, n_codes), dtype=float)
@@ -1082,8 +1159,13 @@ class BacktestModel:
         holdings_value = positions_matrix * valuation
         nav_raw = cash_series + holdings_value.sum(axis=1)
         nav = pd.Series(nav_raw / float(capital), index=pd.Index(self.dates, name="date"), dtype=float)
-        benchmark = self.benchmark_nav_full.reindex(self.dates)
-        benchmark = benchmark.ffill()
+        benchmark = self.benchmark_nav_full.reindex(self.dates).ffill()
+        if state_records:
+            first_execution = min(record[0] for record in state_records)
+            if 0 <= first_execution < n_dates:
+                # Start the return series at the first execution date (inception).
+                nav = nav.iloc[first_execution:]
+                benchmark = benchmark.iloc[first_execution:]
         return nav, benchmark
 
     def _build_equity_curve(self, nav: pd.Series, benchmark_nav: pd.Series) -> pd.DataFrame:

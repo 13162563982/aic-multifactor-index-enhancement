@@ -26,6 +26,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
+from aicwf.agents.llm import ReplayCacheMiss
 from aicwf.agents.roles import (
     agent_loop_limits,
     load_role_assets,
@@ -349,6 +350,41 @@ _FACTOR_REPORT_KEYS = (
     "formation_dates",
     "warnings",
 )
+
+# Run-scoped metadata that must never enter an LLM prompt: prompts are functions of the
+# evidence, not of which run id or backend mode produced it. Without this scrub, replaying
+# a recorded cache under a different run id would miss (the verification artifact embeds
+# the run id and llm_mode).
+_PROMPT_VOLATILE_KEYS = frozenset(
+    {
+        "run_id",
+        "resolved_run_id",
+        "llm_mode",
+        "created_at_utc",
+        "decided_at_utc",
+        "requested_at_utc",
+        "recorded_at_utc",
+        "ts_utc",
+        "run_dir",
+        "run_path",
+    }
+)
+
+
+def _scrub_prompt_metadata(value: Any, *, depth: int = 0) -> Any:
+    """Recursively drop run-scoped metadata keys from an artifact used in a prompt."""
+
+    if depth > 8:
+        return "<<nested content omitted>>"
+    if isinstance(value, Mapping):
+        return {
+            str(key): _scrub_prompt_metadata(item, depth=depth + 1)
+            for key, item in value.items()
+            if str(key) not in _PROMPT_VOLATILE_KEYS
+        }
+    if isinstance(value, (list, tuple)):
+        return [_scrub_prompt_metadata(item, depth=depth + 1) for item in value]
+    return value
 
 
 def _factor_report_excerpt(report: Mapping[str, Any]) -> dict[str, Any]:
@@ -1014,19 +1050,17 @@ def run_risk_review(ctx: RunContext) -> StageOutput:
     )
 
     def critique_validator(text: str) -> list[str]:
-        errors: list[str] = []
-        if "hypothesis" not in text.lower() and "speculat" not in text.lower():
-            errors.append(
-                "risk_critic.submission: distinguish speculation from evidence (label a "
-                "hypothesis explicitly) so the critique is not read as findings"
-            )
-        unverified, cited = check_cited_numbers(text, allowed_numbers)
+        # The "label speculation explicitly" rule is enforced deterministically after the
+        # call by _annotate_speculation(), not as a blocking validation error: a strong
+        # critique can discuss hypothetical mechanisms without literally using the word
+        # "hypothesis", and failing a whole run on vocabulary is not useful.
+        _unverified, cited = check_cited_numbers(text, allowed_numbers)
         if len(cited) < 3:  # redundant with min_cited but gives a clearer message
-            errors.append(
+            return [
                 f"risk_critic.submission: only {len(cited)} verified numbers cited; name at "
                 "least three concrete artifact values"
-            )
-        return errors
+            ]
+        return []
 
     runtime = _make_runtime(
         ctx,
@@ -1041,7 +1075,8 @@ def run_risk_review(ctx: RunContext) -> StageOutput:
         required_phrases=assets.spec.required_phrases,
     )
     critique = runtime.run(user_prompt)
-    critique_path = runtime.write_markdown("critique", _normalise_markdown(str(critique), as_of))
+    critique = _annotate_speculation(str(critique))
+    critique_path = runtime.write_markdown("critique", _normalise_markdown(critique, as_of))
     _event(
         ctx,
         "agent_stage_completed",
@@ -1071,6 +1106,432 @@ def _normalise_markdown(text: str, as_of: dt.date) -> str:
             "snapshot on or before this date.\n\n" + body
         )
     return body.rstrip() + "\n"
+
+
+_SPECULATIVE_LANGUAGE = (
+    "may ",
+    "might ",
+    "could ",
+    "likely",
+    "possibly",
+    "plausibl",
+    "risk that",
+    "suggests",
+    "would require",
+    "we would",
+    "if the",
+)
+
+
+def _annotate_speculation(text: str) -> str:
+    """Guarantee that the risk critique labels speculation as hypothesis, not finding.
+
+    This is a deterministic post-processing step rather than a blocking validation rule:
+    a good critique may discuss hypothetical mechanisms without using the literal word
+    "hypothesis". If speculative language is present and the note contains no explicit
+    hypothesis/speculation label, one audit sentence is appended. The model's own text is
+    never rewritten.
+    """
+
+    lowered = text.lower()
+    if "speculation" in lowered or "hypothes" in lowered:
+        return text
+    if not any(marker in lowered for marker in _SPECULATIVE_LANGUAGE):
+        return text
+    label = (
+        "\n\n## Speculation (hypothesis, not a finding)\n\n"
+        "Any mechanism, forecast or forward-looking statement above is a hypothesis to be "
+        "tested, not an observed finding. Only numbers quoted from the supplied artifacts "
+        "are evidence.\n"
+    )
+    return text.rstrip() + label
+
+
+def _augment_report_disclosure(
+    note: str,
+    *,
+    failed_checks: Sequence[Mapping[str, Any]],
+    concerns: Sequence[Any],
+    realized_te: Any,
+    ex_ante_te: Any,
+    te_target: Any,
+) -> tuple[str, list[str]]:
+    """Deterministically ensure the note discloses weak robustness and risk gaps.
+
+    This is a post-processing safety net, not a blocking validation: the note is already
+    validated (citations, cutoff, sections). If the model omitted a failed robustness
+    check, the placebo concern or the realised-vs-target tracking-error gap, a short
+    ``## Harness disclosure`` section is appended. The model's own prose is never edited,
+    and the transformation is deterministic so replay is byte-identical.
+    """
+
+    lowered = note.lower()
+    warnings: list[str] = []
+    lines: list[str] = []
+    for check in failed_checks:
+        name = str(check.get("name") or check.get("id") or "check")
+        if name.strip().lower() and name.strip().lower() in lowered:
+            continue
+        status = str(check.get("status") or "").strip().lower() or "not_passed"
+        value = check.get("value")
+        threshold = check.get("threshold")
+        detail = str(check.get("detail") or "").strip()
+        parts = [f"- `{name}`: {status}"]
+        if isinstance(value, (int, float)) or isinstance(threshold, (int, float)):
+            parts.append(
+                f"(value {_fmt_number(value)}, threshold {_fmt_number(threshold)})"
+            )
+        if detail:
+            parts.append(f"- {detail}")
+        lines.append(" ".join(parts))
+        warnings.append(f"failed_check_disclosed:{name}")
+
+    placebo_concern = any("placebo" in str(concern).lower() for concern in concerns) or any(
+        "placebo" in str(check.get("name") or check.get("id") or "").lower()
+        for check in failed_checks
+    )
+    if placebo_concern and "placebo" not in lowered:
+        lines.append(
+            "- The placebo / random-score check did not pass or is a listed robustness "
+            "concern; treat the excess return as not robust to a random-score null."
+        )
+        warnings.append("placebo_concern_disclosed")
+
+    realised_mentioned = "tracking error" in lowered or "tracking_error" in lowered
+    if (
+        not realised_mentioned
+        and isinstance(realized_te, (int, float))
+        and isinstance(te_target, (int, float))
+    ):
+        ex_ante_text = _fmt_number(ex_ante_te) if isinstance(ex_ante_te, (int, float)) else "n/a"
+        lines.append(
+            f"- Realised tracking error {_fmt_number(realized_te)} versus ex-ante tracking "
+            f"error {ex_ante_text} and target {_fmt_number(te_target)}."
+        )
+        warnings.append("realized_vs_target_te_disclosed")
+
+    if not lines:
+        return note, warnings
+    section = (
+        "\n\n## Harness disclosure (deterministic)\n\n"
+        "The following items are added deterministically from the verified artifacts so "
+        "the note cannot omit them:\n\n" + "\n".join(lines) + "\n"
+    )
+    return note.rstrip() + section, warnings
+
+
+_REPORT_SECTIONS = (
+    "## Executive summary",
+    "## Hypothesis",
+    "## Data and point-in-time discipline",
+    "## Factor construction",
+    "## Backtest results",
+    "## Robustness",
+    "## Portfolio construction and risk",
+    "## Independent verification",
+    "## Limitations and information cutoff",
+)
+
+_REPORT_DISCLAIMER = "This note is research documentation, not investment advice."
+
+
+def _compose_deterministic_report(
+    *,
+    as_of: dt.date,
+    verdict: str,
+    verification: Mapping[str, Any],
+    metrics: Mapping[str, Any],
+    robustness_checks: Sequence[Mapping[str, Any]],
+    robustness_summary: Mapping[str, Any],
+    risk_report: Any,
+    factor_report: Any,
+    hypothesis: Mapping[str, Any],
+    data_quality: Any,
+    pit_audit: Any,
+    risk_budget: Mapping[str, Any],
+    metrics_table: str,
+) -> str:
+    """Deterministic research note composed from verified artifacts (no model call).
+
+    Used when the report-writer agent repeatedly fails validation: the harness must still
+    produce a truthful, reviewable note rather than silently dropping the stage. Every
+    number here comes from an artifact; the note states its provenance and the cutoff.
+    """
+
+    cutoff = date_str(as_of)
+    recomputed = verification.get("recomputed") if isinstance(verification, Mapping) else {}
+    recomputed = recomputed if isinstance(recomputed, Mapping) else {}
+    strategy_metrics = recomputed.get("metrics") if isinstance(recomputed.get("metrics"), Mapping) else None
+    benchmark_metrics = (
+        recomputed.get("benchmark_metrics")
+        if isinstance(recomputed.get("benchmark_metrics"), Mapping)
+        else None
+    )
+    if not strategy_metrics:
+        strategy_metrics = metrics.get("metrics") if isinstance(metrics.get("metrics"), Mapping) else {}
+    if not benchmark_metrics:
+        benchmark_metrics = (
+            metrics.get("benchmark_metrics")
+            if isinstance(metrics.get("benchmark_metrics"), Mapping)
+            else {}
+        )
+    strategy_metrics = strategy_metrics or {}
+    benchmark_metrics = benchmark_metrics or {}
+
+    lines: list[str] = [
+        "# CSI 300 multi-factor index-enhancement research note",
+        "",
+        f"Information cutoff: {cutoff}.",
+        "",
+        "> Deterministic harness fallback: the report-writing agent failed validation, so "
+        "this note was composed directly from the independently verified artifacts. It "
+        "contains no model-generated claims; a human reviewer must read it before approval.",
+        "",
+        "## Executive summary",
+        "",
+        f"Independent verification verdict: **{verdict}**. "
+        + (
+            "All required independent checks passed; the numbers below are the "
+            "independently recomputed values."
+            if verdict == "PASS"
+            else "The verification did not pass; this note documents the evidence without "
+            "claiming publication readiness, and the run must be revised or escalated."
+        ),
+        "",
+    ]
+    headline_metrics = (
+        "annualized_return",
+        "annualized_excess_return",
+        "tracking_error",
+        "information_ratio",
+        "max_drawdown",
+        "annualized_turnover",
+    )
+    headline = [
+        f"`{key}` = {_fmt_number(strategy_metrics.get(key))}"
+        for key in headline_metrics
+        if isinstance(strategy_metrics.get(key), (int, float))
+    ]
+    if headline:
+        lines.append("Headline metrics: " + "; ".join(headline) + ".")
+        lines.append("")
+
+    lines.extend(["## Hypothesis", ""])
+    thesis = str(hypothesis.get("thesis") or "").strip()
+    if thesis:
+        lines.extend([thesis, ""])
+    weights = hypothesis.get("factor_weights") or {}
+    if isinstance(weights, Mapping) and weights:
+        lines.extend(["| factor | weight |", "|---|---|"])
+        for factor_id in sorted(weights):
+            lines.append(f"| {factor_id} | {_fmt_number(weights[factor_id])} |")
+        lines.append("")
+    constraints = hypothesis.get("constraints") or {}
+    if isinstance(constraints, Mapping) and constraints:
+        lines.append(
+            "Rebalance: "
+            f"{hypothesis.get('rebalance', 'n/a')}; constraints: "
+            + ", ".join(f"{key}={_fmt_number(value)}" for key, value in sorted(constraints.items()))
+            + "."
+        )
+        lines.append("")
+
+    lines.extend(
+        [
+            "## Data and point-in-time discipline",
+            "",
+            f"The analysis uses the frozen CSI 300 snapshot available on or before {cutoff}. "
+            "No live data, network access or post-cutoff information is used.",
+            "",
+        ]
+    )
+    quality = data_quality if isinstance(data_quality, Mapping) else {}
+    if quality:
+        lines.append(
+            f"Data quality: universe size {_fmt_number(quality.get('universe_size'))}, "
+            f"coverage {_fmt_number(quality.get('coverage'))}, warnings "
+            f"{len(quality.get('warnings') or [])}."
+        )
+    pit = pit_audit if isinstance(pit_audit, Mapping) else {}
+    if pit:
+        lines.append(
+            f"PIT audit: maximum panel date {str(pit.get('max_panel_date', 'n/a'))}, "
+            f"violations {len(pit.get('violations') or [])}."
+        )
+    lines.extend(
+        [
+            "Fundamentals are point-in-time: a value is usable only after its announcement "
+            "date; missing announcement dates were estimated and flagged in the snapshot.",
+            "",
+        ]
+    )
+
+    lines.extend(["## Factor construction", ""])
+    factor = factor_report if isinstance(factor_report, Mapping) else {}
+    rank_ic = factor.get("rank_ic") if isinstance(factor.get("rank_ic"), Mapping) else {}
+    if rank_ic:
+        lines.append("Factor RankIC (mean): " + ", ".join(
+            f"{factor_id}={_fmt_number(value)}" for factor_id, value in sorted(rank_ic.items())
+        ) + ".")
+    coverage = factor.get("coverage") if isinstance(factor.get("coverage"), Mapping) else {}
+    if coverage:
+        values = [value for value in coverage.values() if isinstance(value, (int, float))]
+        if values:
+            lines.append(
+                f"Coverage ranges from {_fmt_number(min(values))} to {_fmt_number(max(values))}."
+            )
+    lines.append("Factors are winsorised, rank-standardised and neutralised by industry and log size.")
+    lines.append("")
+
+    lines.extend(["## Backtest results", "", "The companion table `metrics_table.md` is authoritative:", ""])
+    lines.extend(metrics_table.strip().splitlines()[2:] if metrics_table.startswith("#") else metrics_table.strip().splitlines())
+    lines.append("")
+
+    lines.extend(["## Robustness", ""])
+    failed_for_counts = [
+        check
+        for check in robustness_checks
+        if isinstance(check, Mapping)
+        and str(check.get("status", "")).strip().lower() not in {"pass", "ok", ""}
+    ]
+    passed_count = sum(
+        1
+        for check in robustness_checks
+        if isinstance(check, Mapping)
+        and str(check.get("status", "")).strip().lower() in {"pass", "ok"}
+    )
+    failed_detail = "; ".join(
+        f"{str(check.get('name') or check.get('id') or 'check')} (value "
+        f"{_fmt_number(check.get('value'))}, threshold {_fmt_number(check.get('threshold'))})"
+        for check in failed_for_counts
+    )
+    lines.append(
+        f"The robustness suite has exactly {len(robustness_checks)} checks: "
+        f"{passed_count} passed, {len(failed_for_counts)} failed"
+        + (f" ({failed_detail})." if failed_detail else ".")
+    )
+    concerns = list(robustness_summary.get("concerns") or []) if isinstance(robustness_summary, Mapping) else []
+    if isinstance(robustness_summary, Mapping) and robustness_summary.get("pass"):
+        passed = robustness_summary.get("pass")
+        if isinstance(passed, (list, tuple)) and passed:
+            lines.append("Passed robustness checks: " + ", ".join(str(item) for item in passed) + ".")
+        elif isinstance(passed, (int, float)):
+            lines.append(f"Robustness checks passed: {_fmt_number(passed)}.")
+    if concerns:
+        lines.append("Robustness concerns: " + "; ".join(str(item) for item in concerns) + ".")
+    if robustness_checks:
+        lines.extend(
+            ["", "| check | status | value | threshold | detail |", "|---|---|---|---|---|"]
+        )
+        for check in robustness_checks:
+            lines.append(
+                f"| {check.get('name') or check.get('id') or 'check'} | "
+                f"{check.get('status')} | {_fmt_number(check.get('value'))} | "
+                f"{_fmt_number(check.get('threshold'))} | "
+                f"{str(check.get('detail') or '').replace('|', '/')} |"
+            )
+    else:
+        lines.append("No robustness check artifact was supplied; robustness is not established.")
+    lines.append("")
+
+    lines.extend(["## Portfolio construction and risk", ""])
+    risk = risk_report if isinstance(risk_report, Mapping) else {}
+    turnover_text = risk_budget.get("turnover_text") if isinstance(risk_budget, Mapping) else None
+    if turnover_text:
+        lines.append(str(turnover_text))
+    lines.append(
+        f"Realised tracking error {_fmt_number(risk_budget.get('realized_tracking_error'))} "
+        f"versus ex-ante tracking error {_fmt_number(risk_budget.get('ex_ante_tracking_error'))} "
+        f"and target {_fmt_number(risk_budget.get('te_target'))}; turnover "
+        f"{_fmt_number(risk_budget.get('turnover'))}."
+    )
+    if risk:
+        lines.append(
+            f"Portfolio report: {_fmt_number(risk.get('n_names'))} names, ex-ante TE "
+            f"{_fmt_number(risk.get('ex_ante_te'))}, turnover {_fmt_number(risk.get('turnover'))}, "
+            f"optimizer status {str((risk.get('optimizer') or {}).get('status', 'n/a'))} "
+            f"(fallback used: {str((risk.get('optimizer') or {}).get('fallback_used', 'n/a'))})."
+        )
+        constraints = risk.get("constraints") if isinstance(risk.get("constraints"), Mapping) else {}
+        if constraints:
+            lines.append(
+                "Constraints: "
+                + ", ".join(f"{key}={_fmt_number(value)}" for key, value in sorted(constraints.items()))
+                + "."
+            )
+    lines.append("")
+
+    lines.extend(["## Independent verification", "", f"Verdict: **{verdict}**.", ""])
+    checks = verification.get("checks") if isinstance(verification, Mapping) else []
+    if isinstance(checks, list) and checks:
+        for check in checks:
+            lines.append(
+                f"- {check.get('id')}: {str(check.get('status')).upper()} — "
+                f"{str(check.get('detail') or '').strip()}"
+            )
+    discrepancies = verification.get("discrepancies") if isinstance(verification, Mapping) else []
+    lines.append(
+        "Discrepancies: "
+        + (
+            "none reported."
+            if not discrepancies
+            else "; ".join(str(item) for item in list(discrepancies)[:10])
+        )
+    )
+    artifact_hashes = verification.get("artifact_hashes") if isinstance(verification, Mapping) else {}
+    lines.append(
+        f"Verified artifact hashes: {len(artifact_hashes or {})} sha256 digests recorded in verification.json."
+    )
+    lines.append("")
+
+    lines.extend(
+        [
+            "## Limitations and information cutoff",
+            "",
+            f"Information cutoff: {cutoff}. No live or post-cutoff information is used.",
+            "",
+            "- Survivorship caveat: the eligible universe is the current CSI 300 membership "
+            "from the frozen snapshot; historical membership is not reconstructed.",
+            "- Benchmark weights are a capped, renormalised free-float proxy, not official "
+            "index weights.",
+            "- Some fundamentals rely on estimated announcement dates, flagged in the snapshot.",
+            "- Transaction costs, impact and tradability are modelled; no live execution is "
+            "claimed.",
+            "- Past backtest performance is not indicative of future results.",
+            "",
+            _REPORT_DISCLAIMER,
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _validate_deterministic_report(
+    note: str,
+    *,
+    as_of: dt.date,
+    verdict: str,
+    failed_check_names: Sequence[str],
+) -> list[str]:
+    """Light internal check for the deterministic fallback note (not the LLM guard)."""
+
+    errors: list[str] = []
+    lowered = note.lower()
+    for section in _REPORT_SECTIONS:
+        if section.lower() not in lowered:
+            errors.append(f"missing section {section!r}")
+    if date_str(as_of) not in note:
+        errors.append(f"information cutoff {date_str(as_of)} missing")
+    if verdict.lower() not in lowered:
+        errors.append(f"verification verdict {verdict!r} missing")
+    if _REPORT_DISCLAIMER.lower() not in lowered:
+        errors.append("required disclaimer sentence missing")
+    for name in failed_check_names:
+        if str(name).lower() not in lowered:
+            errors.append(f"failed robustness check {name!r} not disclosed")
+    if len(note.strip()) < 500:
+        errors.append("fallback note is too short to be reviewable")
+    return errors
 
 
 # ---------------------------------------------------------------------------
@@ -1118,12 +1579,175 @@ def run_report(ctx: RunContext) -> StageOutput:
     hypothesis = _read_upstream_json(ctx, "hypothesis", "hypothesis") or {}
     metrics_excerpt = _excerpt(metrics, max_depth=3, max_items=25, max_str=400)
     verification_excerpt = _excerpt(
-        verification, max_depth=3, max_items=25, max_str=400
+        _scrub_prompt_metadata(verification), max_depth=3, max_items=25, max_str=400
     )
     robustness_excerpt = _excerpt(
         robustness if isinstance(robustness, Mapping) else {}, max_depth=3, max_items=20
     )
+    robustness_document = robustness if isinstance(robustness, Mapping) else {}
+    robustness_checks = _read_upstream_json(ctx, "robustness", "robustness_checks")
+    if not isinstance(robustness_checks, list):
+        embedded = robustness_document.get("checks")
+        robustness_checks = embedded if isinstance(embedded, list) else []
+    failed_robustness_checks = [
+        check
+        for check in robustness_checks
+        if isinstance(check, Mapping)
+        and str(check.get("status", "")).strip().lower() not in {"pass", "ok", ""}
+    ]
+    failed_check_names = [
+        str(check.get("name") or check.get("id") or "unnamed_check")
+        for check in failed_robustness_checks
+    ]
+    robustness_summary_document = robustness_document.get("summary") or {}
+    if not isinstance(robustness_summary_document, Mapping):
+        robustness_summary_document = {}
+    robustness_disclosure = {
+        "summary": dict(robustness_summary_document),
+        "counts": {
+            "checks_total": len(robustness_checks),
+            "checks_not_passed": len(failed_robustness_checks),
+            "checks_passed": sum(
+                1
+                for check in robustness_checks
+                if isinstance(check, Mapping)
+                and str(check.get("status", "")).strip().lower() in {"pass", "ok"}
+            ),
+        },
+        "failed_checks": _excerpt(failed_robustness_checks, max_depth=2, max_items=20, max_str=400),
+        "concerns": _excerpt(
+            robustness_summary_document.get("concerns") or [], max_depth=2, max_items=20, max_str=400
+        ),
+    }
+    robustness_counts = robustness_disclosure["counts"]
+    failed_detail_text = "; ".join(
+        f"{str(check.get('name') or check.get('id') or 'check')} (value "
+        f"{_fmt_number(check.get('value'))}, threshold {_fmt_number(check.get('threshold'))})"
+        for check in failed_robustness_checks
+    )
+    robustness_counts_text = (
+        f"The robustness suite has exactly {robustness_counts['checks_total']} checks: "
+        f"{robustness_counts['checks_passed']} passed, {robustness_counts['checks_not_passed']} failed"
+        + (f" ({failed_detail_text})." if failed_detail_text else ".")
+    )
+    robustness_disclosure["counts_text"] = robustness_counts_text
+    robustness_disclosure["note"] = (
+        "Use these exact robustness counts and check names. Do not mix independent "
+        "verification checks with robustness checks and do not restate any other count."
+    )
     risk_excerpt = _excerpt(risk_report or {}, max_depth=2, max_items=15)
+    metrics_metrics = metrics.get("metrics") if isinstance(metrics.get("metrics"), Mapping) else {}
+    realized_te = metrics_metrics.get("tracking_error")
+    if not isinstance(realized_te, (int, float)) and isinstance(risk_report, Mapping):
+        realized_te = risk_report.get("ex_ante_te")
+    ex_ante_te = risk_report.get("ex_ante_te") if isinstance(risk_report, Mapping) else None
+    te_target = None
+    if isinstance(risk_report, Mapping):
+        te_target = risk_report.get("te_target")
+        risk_constraints = risk_report.get("constraints")
+        if te_target is None and isinstance(risk_constraints, Mapping):
+            te_target = risk_constraints.get("te_target")
+    if te_target is None:
+        hypothesis_constraints = (hypothesis or {}).get("constraints") or {}
+        te_target = hypothesis_constraints.get("te_target")
+    risk_budget = {
+        "realized_tracking_error": realized_te,
+        "ex_ante_tracking_error": ex_ante_te,
+        "te_target": te_target,
+        "te_utilisation": (
+            round(float(ex_ante_te) / float(te_target), 6)
+            if isinstance(ex_ante_te, (int, float))
+            and isinstance(te_target, (int, float))
+            and float(te_target) > 0
+            else None
+        ),
+        "turnover": metrics_metrics.get("turnover_annualized", metrics_metrics.get("turnover_average")),
+    }
+    # Turnover is reported as the engine records it: one-way annualised (mean one-way
+    # per rebalance x 12), with two-way = 2x and the maximum single-rebalance two-way
+    # derived from metrics.json["rebalances"]. The note must use these definitions.
+    one_way_annualized = None
+    for key in ("turnover_annualized", "annualized_turnover"):
+        if isinstance(metrics_metrics.get(key), (int, float)):
+            one_way_annualized = float(metrics_metrics[key])
+            break
+    if one_way_annualized is None and isinstance(metrics_metrics.get("turnover_average"), (int, float)):
+        one_way_annualized = float(metrics_metrics["turnover_average"]) * 12.0
+    rebalance_rows = metrics.get("rebalances") if isinstance(metrics.get("rebalances"), list) else []
+    rebalance_turnovers = [
+        float(row.get("turnover"))
+        for row in rebalance_rows
+        if isinstance(row, Mapping) and isinstance(row.get("turnover"), (int, float))
+    ]
+    max_single_two_way = (
+        2.0 * max(rebalance_turnovers)
+        if rebalance_turnovers
+        else (float(metrics_metrics["turnover_average"]) * 2.0 if isinstance(metrics_metrics.get("turnover_average"), (int, float)) else None)
+    )
+    if one_way_annualized is not None:
+        two_way_annualized = 2.0 * one_way_annualized
+    else:
+        two_way_annualized = None
+    turnover_definitions = {
+        "annualised_one_way": one_way_annualized,
+        "annualised_two_way": two_way_annualized,
+        "max_single_rebalance_two_way": max_single_two_way,
+    }
+    turnover_text = (
+        "Turnover: annualised one-way "
+        f"{_fmt_number(one_way_annualized)}; two-way is {_fmt_number(two_way_annualized)}; "
+        "the maximum single-rebalance two-way turnover is "
+        f"{_fmt_number(max_single_two_way)}."
+    )
+    risk_budget["turnover_definitions"] = turnover_definitions
+    risk_budget["turnover_text"] = turnover_text
+    risk_budget["note"] = (
+        "Use exactly these turnover definitions and values; do not report a different "
+        "turnover measure."
+    )
+    data_quality = _read_upstream_json(ctx, "data_prep", "data_quality")
+    pit_audit = _read_upstream_json(ctx, "data_prep", "pit_audit")
+    data_limitations = {
+        "data_quality": _excerpt(
+            data_quality if isinstance(data_quality, Mapping) else {}, max_depth=2, max_items=12, max_str=400
+        ),
+        "pit_audit": _excerpt(
+            pit_audit if isinstance(pit_audit, Mapping) else {}, max_depth=2, max_items=12, max_str=400
+        ),
+        "survivorship_note": (
+            "The eligible universe is the current CSI 300 membership from the frozen snapshot; "
+            "historical membership is not reconstructed, so results carry a survivorship caveat "
+            "that must be disclosed. Fundamentals are point-in-time: only rows whose notice_date "
+            "is on or before the decision date are used."
+        ),
+        "information_cutoff": date_str(as_of),
+    }
+    reporting_requirements = {
+        "must_disclose_failed_robustness_checks": failed_check_names,
+        "must_not_claim_all_checks_passed": bool(failed_robustness_checks),
+        "robustness_check_counts_exact": robustness_counts_text,
+        "turnover_definitions_exact": turnover_text,
+        "must_use_exact_counts_wording": (
+            "In the Robustness section, state exactly the robustness-suite counts above "
+            "and name every failed check; never mix independent-verification check counts "
+            "with robustness-suite counts and never restate a different total. In the "
+            "Portfolio construction and risk section, use exactly the turnover definitions "
+            "above (annualised one-way, annualised two-way, maximum single-rebalance "
+            "two-way)."
+        ),
+        "must_discuss_placebo_if_concern": any(
+            "placebo" in str(concern).lower()
+            for concern in (robustness_summary_document.get("concerns") or [])
+        )
+        or any("placebo" in name.lower() for name in failed_check_names),
+        "must_disclose_realized_vs_target_tracking_error": {
+            "realized_tracking_error": realized_te,
+            "ex_ante_tracking_error": ex_ante_te,
+            "te_target": te_target,
+        },
+        "must_state_limitations": ["survivorship caveat", "point-in-time fundamentals"],
+        "information_cutoff": date_str(as_of),
+    }
     factor_excerpt = _factor_report_excerpt(factor_report if isinstance(factor_report, Mapping) else {})
     hypothesis_excerpt = _excerpt(hypothesis, max_depth=2, max_items=10)
     assets = load_role_assets("report_writer", ctx.config)
@@ -1144,6 +1768,10 @@ def run_report(ctx: RunContext) -> StageOutput:
         metrics_table,
         backtest_summary,
         robustness_summary,
+        robustness_disclosure,
+        risk_budget,
+        data_limitations,
+        reporting_requirements,
     )
 
     def check_verified_number(args: dict[str, Any]) -> dict[str, Any]:
@@ -1194,7 +1822,11 @@ def run_report(ctx: RunContext) -> StageOutput:
         blobs={
             "verification": verification_excerpt,
             "metrics": metrics_excerpt,
+            "risk_budget": risk_budget,
             "robustness": robustness_excerpt,
+            "robustness_disclosure": robustness_disclosure,
+            "data_limitations": data_limitations,
+            "reporting_requirements": reporting_requirements,
             "risk_report": risk_excerpt,
             "factor_report": factor_excerpt,
             "hypothesis": hypothesis_excerpt,
@@ -1221,8 +1853,12 @@ def run_report(ctx: RunContext) -> StageOutput:
         as_of=as_of,
         sections=[
             ("verification", verification_excerpt),
+            ("reporting_requirements", reporting_requirements),
             ("metrics", metrics_excerpt),
-            ("robustness_summary", robustness_excerpt),
+            ("risk_budget_realized_vs_target", risk_budget),
+            ("robustness_disclosure", robustness_disclosure),
+            ("data_limitations", data_limitations),
+            ("robustness_evidence", robustness_excerpt),
             ("portfolio_risk_report", risk_excerpt),
             ("factor_report", factor_excerpt),
             ("hypothesis", hypothesis_excerpt),
@@ -1239,6 +1875,13 @@ def run_report(ctx: RunContext) -> StageOutput:
             "attributed to its source artifact; verification.recomputed and metrics are "
             "authoritative;\n"
             f"- report the verification verdict {verdict!r} and any discrepancies verbatim;\n"
+            "- follow reporting_requirements exactly: list EVERY failed robustness check by "
+            "name with its value/threshold and never claim that all checks passed; use the "
+            "exact robustness-suite counts and turnover definitions given (never mix "
+            "robustness counts with independent-verification counts); discuss "
+            "the placebo result when must_discuss_placebo_if_concern is true; state the "
+            "realised tracking error against the ex-ante/target tracking error; state the "
+            "survivorship caveat and the point-in-time fundamental limitation;\n"
             "- reference metrics_table.md as the companion table;\n"
             "- no forecasts, price targets, external references or wall-clock timestamps."
         ),
@@ -1275,8 +1918,67 @@ def run_report(ctx: RunContext) -> StageOutput:
         min_chars=int(assets.spec.min_chars),
         required_phrases=assets.spec.required_phrases,
     )
-    note = str(runtime.run(user_prompt))
+    report_mode = "agent"
+    fallback_reason = ""
+    try:
+        note = str(runtime.run(user_prompt))
+    except ReplayCacheMiss:
+        # Deterministic replay must never silently degrade to a non-recorded artifact.
+        raise
+    except NonRetryableError as exc:
+        # The producing agent is not trusted after exhausted repairs. The harness must
+        # still publish a truthful, reviewable note; compose it deterministically from
+        # the verified artifacts and mark the stage output accordingly.
+        report_mode = "deterministic_fallback"
+        fallback_reason = str(exc)[:1500]
+        note = _compose_deterministic_report(
+            as_of=as_of,
+            verdict=verdict,
+            verification=verification,
+            metrics=metrics,
+            robustness_checks=robustness_checks,
+            robustness_summary=robustness_summary_document,
+            risk_report=risk_report,
+            factor_report=factor_report,
+            hypothesis=hypothesis,
+            data_quality=data_quality,
+            pit_audit=pit_audit,
+            risk_budget=risk_budget,
+            metrics_table=metrics_table,
+        )
+        fallback_errors = _validate_deterministic_report(
+            note, as_of=as_of, verdict=verdict, failed_check_names=failed_check_names
+        )
+        if fallback_errors:
+            raise ValidationError(
+                "deterministic fallback report failed its internal completeness check: "
+                + "; ".join(fallback_errors[:8])
+            ) from exc
+        _event(
+            ctx,
+            "report_fallback_used",
+            level="warn",
+            stage=stage,
+            reason=fallback_reason[:500],
+            information_cutoff=date_str(as_of),
+        )
     note = _normalise_markdown(note, as_of)
+    note, disclosure_warnings = _augment_report_disclosure(
+        note,
+        failed_checks=failed_robustness_checks,
+        concerns=robustness_summary_document.get("concerns") or [],
+        realized_te=realized_te,
+        ex_ante_te=ex_ante_te,
+        te_target=te_target,
+    )
+    if disclosure_warnings:
+        _event(
+            ctx,
+            "report_disclosure_added",
+            stage=stage,
+            warnings=disclosure_warnings,
+            information_cutoff=date_str(as_of),
+        )
     note_path = runtime.write_markdown("research_note", note)
     table_path = runtime.write_markdown("metrics_table", metrics_table)
 
@@ -1305,8 +2007,12 @@ def run_report(ctx: RunContext) -> StageOutput:
         summary={
             "paths": summary_paths,
             "verdict": verdict,
+            "report_mode": report_mode,
+            "fallback_reason": fallback_reason,
             "charts": sorted(chart_paths),
             "chart_warnings": chart_warnings,
+            "failed_robustness_checks": failed_check_names,
+            "disclosure_warnings": disclosure_warnings,
             "information_cutoff": date_str(as_of),
             "agent": _agent_summary(runtime),
         },
@@ -1640,7 +2346,8 @@ def generate_verifier_note(ctx: RunContext, verification_dict: Mapping[str, Any]
     discrepancies = list(verification_dict.get("discrepancies") or [])
     hashes = verification_dict.get("artifact_hashes") or {}
     allowed_numbers = numbers_from(verification_dict)
-    excerpt = _excerpt(verification_dict, max_depth=3, max_items=30, max_str=600)
+    prompt_verification = _scrub_prompt_metadata(verification_dict)
+    excerpt = _excerpt(prompt_verification, max_depth=3, max_items=30, max_str=600)
 
     def check_verdict(_args: dict[str, Any]) -> dict[str, Any]:
         return {"verdict": verdict}
@@ -1681,8 +2388,7 @@ def generate_verifier_note(ctx: RunContext, verification_dict: Mapping[str, Any]
         toolbox = _toolbox(
             ctx,
             blobs={"verification": excerpt},
-            checks={
-                "verdict": check_verdict,
+            checks={                "verdict": check_verdict,
                 "list_checks": check_list_checks,
                 "failed_checks": check_failed_checks,
                 "check_detail": check_check_detail,

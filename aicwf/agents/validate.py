@@ -41,6 +41,15 @@ _DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 _BENCHMARK_NAME_RE = re.compile(r"\bCSI[\s-]?300\b", re.IGNORECASE)
 _THOUSANDS_RE = re.compile(r"(?<=\d),(?=\d{3}(?!\d))")
 _STRING_NUMBER_RE = re.compile(r"-?\d[\d,]*(?:\.\d+)?%?")
+# Document-level unit conversions accepted for prose citations: percent <-> fraction
+# and basis points <-> fraction, in both directions.
+_UNIT_SCALES: tuple[Decimal, ...] = (
+    Decimal(1),
+    Decimal(100),
+    Decimal(1) / Decimal(100),
+    Decimal(10000),
+    Decimal(1) / Decimal(10000),
+)
 
 
 def normalise_numeric_literals(text: str) -> str:
@@ -608,7 +617,19 @@ def _is_exempt_token(token: str) -> bool:
 
 
 def _matches_allowed(value: Decimal, decimals: int, allowed: Iterable[Decimal]) -> bool:
-    """True when the quoted value is an exact or presentation-rounded artifact number."""
+    """True when the quoted value is an artifact number in a compatible unit.
+
+    Exact and presentation-rounded matches are accepted, and so are document-level unit
+    conversions that models legitimately make when writing prose:
+
+    * fractions <-> percent: 0.015 <-> 1.5 (x100), 0.0234 <-> 2.34;
+    * basis points <-> fraction: 0.00025 <-> 2.5 (x10000);
+    * percent <-> basis points: 0.15% <-> 15 bp (x100 relative inside the above).
+
+    The conversion scales are fixed (1, 100, 1/100, 10000, 1/10000) and must match
+    within the quoted precision, so genuinely absent invention (0.987654) is still
+    rejected.
+    """
 
     if decimals > 6:
         decimals = 6
@@ -616,11 +637,13 @@ def _matches_allowed(value: Decimal, decimals: int, allowed: Iterable[Decimal]) 
     for candidate in allowed:
         if value == candidate:
             return True
-        try:
-            if candidate.quantize(quantum) == value:
-                return True
-        except ArithmeticError:  # pragma: no cover - extreme exponents
-            continue
+        for scale in _UNIT_SCALES:
+            scaled = candidate if scale == 1 else candidate * scale
+            try:
+                if scaled.quantize(quantum) == value:
+                    return True
+            except ArithmeticError:  # pragma: no cover - extreme exponents
+                continue
     return False
 
 

@@ -59,6 +59,7 @@ from aicwf.verify.independent_backtest import (
     compute_performance_metrics,
     compute_turnover,
     json_safe,
+    normalise_ledger,
     rebuild_from_ledger,
 )
 
@@ -310,7 +311,22 @@ def build_verification(
     recomputed: dict[str, Any] = {}
     discrepancies: list[dict[str, Any]] = []
     if rebuild is not None and benchmark_series is not None:
-        metrics = compute_performance_metrics(rebuild.nav, benchmark_series)
+        # The backtest equity curve starts at the first T+1 execution date, while the
+        # ledger rebuild covers the full frozen panel (cash before inception).  Metrics
+        # must be recomputed on the same inception window; reconciliation and
+        # determinism keep using the full rebuild.
+        nav_for_metrics = rebuild.nav
+        metrics_window_start = str(rebuild.nav.index[0])
+        ledger_frame = data.get("ledger")
+        if isinstance(ledger_frame, pd.DataFrame) and not ledger_frame.empty:
+            try:
+                first_execution = str(normalise_ledger(ledger_frame)["date"].min())
+            except Exception:  # noqa: BLE001 - malformed ledger is reported by other checks
+                first_execution = ""
+            if first_execution and first_execution in rebuild.nav.index:
+                nav_for_metrics = rebuild.nav.loc[first_execution:]
+                metrics_window_start = first_execution
+        metrics = compute_performance_metrics(nav_for_metrics, benchmark_series)
         benchmark_metrics = compute_benchmark_metrics(benchmark_series)
         turnover = compute_turnover(data.get("ledger"), rebuild.path)
         declared_metrics = (data.get("metrics") or {}).get("metrics", {}) if isinstance(data.get("metrics"), dict) else {}
@@ -328,9 +344,12 @@ def build_verification(
         recomputed = {
             "initial_capital": capital,
             "nav_hash": rebuild.nav_hash(),
-            "nav_start": float(nav_values.iloc[0]),
+            "nav_inception": float(nav_values.iloc[0]),
+            "nav_start": float(nav_for_metrics.iloc[0]),
             "nav_end": float(nav_values.iloc[-1]),
+            "metrics_window_start": metrics_window_start,
             "n_valuation_days": int(len(nav_values)),
+            "n_metric_days": int(len(nav_for_metrics)),
             "metrics": metrics,
             "benchmark_metrics": benchmark_metrics,
             "turnover": turnover,

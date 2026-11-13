@@ -170,6 +170,7 @@ def build_portfolio(
         raise DataQualityError(
             f"no factor score available at or before {cutoff}; cannot build a lagged portfolio"
         )
+    eligible_rows = factor_panel[factor_panel["date"] == signal_date].copy()
 
     close = _pivot(panel, "close").sort_index()
     valuation_close = close.ffill()
@@ -213,73 +214,25 @@ def build_portfolio(
         if "board" in universe.columns
         else {code: "main" for code in universe_codes}
     )
-
-    eligible_rows = factor_panel[factor_panel["date"] == signal_date]
-    eligible = set(eligible_rows.loc[eligible_rows["eligible"].astype(bool), "code"].astype(str))
-    min_listed = float(common.section(cfg, "universe", "min_listed_days", default=0) or 0)
-    screen: list[str] = []
-    for code in universe_codes:
-        if code not in eligible:
-            continue
-        if bool(is_st_map.get(code, False)):
-            continue
-        price = close.at[decision, code] if decision in close.index and code in close.columns else np.nan
-        if not np.isfinite(float(price)) or float(price) <= 0:
-            continue
-        if decision in in_universe.index and code in in_universe.columns and not bool(in_universe.at[decision, code]):
-            continue
-        if listed_days is not None and decision in listed_days.index and code in listed_days.columns:
-            value = float(listed_days.at[decision, code])
-            if np.isfinite(value) and value < min_listed:
-                continue
-        screen.append(code)
-    if len(screen) < 2:
-        raise DataQualityError(f"only {len(screen)} investable names on {decision}; cannot optimise")
-
-    # Benchmark proxy (capped + renormalised) on the investable set.  The cap is
-    # applied with the same safety margin as the weight bound so the proxy itself
-    # is feasible inside the box (otherwise industry-neutral projection would be
-    # forced to relax the industry targets).
-    max_weight = float(constraints.get("max_weight", 0.03))
-    benchmark_cap = float(constraints.get("benchmark_weight_cap", max_weight))
-    weight_margin = float(constraints.get("weight_margin", 0.985))
-    effective_cap = min(benchmark_cap, max_weight) * weight_margin
-    raw_weights = universe.set_index("code")["weight"].reindex(screen).fillna(0.0)
-    capped = common.project_capped_benchmark(raw_weights, effective_cap)
-    benchmark = capped / float(capped.sum())
-    industry = pd.Series(
-        [str(industries.at[decision, code]) if decision in industries.index and code in industries.columns else "UNKNOWN" for code in screen],
-        index=screen,
+    suspended_pivot = (
+        panel.assign(_s=panel["suspended"].astype(bool))
+        .pivot_table(index="date", columns="code", values="_s", aggfunc="last")
+        .reindex(index=panel_dates)
     )
+    suspended_values = suspended_pivot.to_numpy()
+    suspended = pd.DataFrame(
+        np.where(pd.isna(suspended_values), True, suspended_values),
+        index=suspended_pivot.index,
+        columns=suspended_pivot.columns,
+    ).astype(bool)
 
-    # Alpha: composite score at the lagged signal date.
-    score_rows = factor_panel[factor_panel["date"] == signal_date].set_index("code")
-    alpha = pd.to_numeric(score_rows["composite_score"], errors="coerce").reindex(screen).astype(float).fillna(0.0)
-    spread = float(alpha.std(ddof=0))
-    if spread > 0:
-        alpha = (alpha - float(alpha.mean())) / spread
-
-    # Covariance of trailing daily returns.
-    covariance_cfg = dict(common.section(cfg, "portfolio", "covariance", default={}) or {})
-    lookback = int(covariance_cfg.get("lookback_days", 120) or 120)
-    annualization = int(covariance_cfg.get("annualization", 252) or 252)
-    window = panel_dates[max(0, len(panel_dates) - lookback) :]
-    returns_window = ret.reindex(index=window, columns=screen).astype(float)
-    covariance_result = portfolio_optimizer.ledoit_wolf_covariance(
-        returns_window,
-        annualization=annualization,
-        min_obs=int(covariance_cfg.get("min_obs", 20) or 20),
-        method=str(covariance_cfg.get("method", "ledoit_wolf")),
-        fallback=str(covariance_cfg.get("fallback", "diagonal")),
-    )
-    covariance = covariance_result.covariance.reindex(index=screen, columns=screen).fillna(0.0)
-
-    # Current holdings / NAV from the backtest stage.
+    # Current holdings / NAV from the backtest stage (loaded before construction so
+    # untradable names can be carried at their current holding weight).
     capital = float(common.section(cfg, "backtest", "initial_capital", default=1.0e8) or 1.0e8)
     lot = int(common.section(cfg, "backtest", "lot_size", default=100) or 100)
     current_shares: dict[str, int] = {}
-    previous_weights = benchmark.copy()
     holdings = inputs.get("holdings")
+    held_weights = pd.Series(dtype=float)
     if isinstance(holdings, pd.DataFrame) and len(holdings):
         frame = holdings.copy()
         frame["date"] = frame["date"].astype(str).str[:10]
@@ -287,13 +240,13 @@ def build_portfolio(
         last_date = frame["date"].max()
         latest = frame[frame["date"] == last_date]
         current_shares = {str(row.code): int(row.shares) for row in latest.itertuples(index=False)}
-        weights = pd.Series(
+        held_weights = pd.Series(
             [float(row.weight) for row in latest.itertuples(index=False)],
             index=[str(row.code) for row in latest.itertuples(index=False)],
             dtype=float,
-        ).reindex(screen).fillna(0.0)
-        if float(weights.sum()) > 0:
-            previous_weights = weights / float(weights.sum())
+        )
+        if float(held_weights.sum()) > 0:
+            held_weights = held_weights / float(held_weights.sum())
     nav = capital
     equity_curve = inputs.get("equity_curve")
     if isinstance(equity_curve, pd.DataFrame) and len(equity_curve):
@@ -305,25 +258,103 @@ def build_portfolio(
         if np.isfinite(nav_value) and nav_value > 0:
             nav = float(nav_value) * capital
 
+    # Code set: every benchmark member with a frozen price, plus any held name.
+    decision_prices = (
+        valuation_close.loc[decision] if decision in valuation_close.index else pd.Series(dtype=float)
+    )
+    member_codes = [
+        code
+        for code in universe_codes
+        if code in decision_prices.index
+        and np.isfinite(float(decision_prices.get(code, np.nan)))
+        and float(decision_prices.get(code, 0.0)) > 0
+    ]
+    codes = sorted(set(member_codes) | set(held_weights.index.tolist()))
+    if len(codes) < 2:
+        raise DataQualityError(f"only {len(codes)} investable names on {decision}; cannot optimise")
+
+    # Benchmark proxy: capped free-float weights, renormalised over the code set.
+    max_weight = float(constraints.get("max_weight", 0.03))
+    benchmark_cap = float(constraints.get("benchmark_weight_cap", max_weight))
+    weight_margin = float(constraints.get("weight_margin", 0.985))
+    effective_cap = min(benchmark_cap, max_weight) * weight_margin
+    raw_weights = universe.set_index("code")["weight"].reindex(codes).fillna(0.0)
+    capped = common.project_capped_benchmark(raw_weights, effective_cap)
+    benchmark = capped / float(capped.sum())
+    industry = pd.Series(
+        [
+            str(industries.at[decision, code])
+            if decision in industries.index and code in industries.columns
+            else "UNKNOWN"
+            for code in codes
+        ],
+        index=codes,
+    )
+    current_weights = held_weights.reindex(codes).fillna(0.0)
+    if float(current_weights.sum()) > 0:
+        current_weights = current_weights / float(current_weights.sum())
+
+    # Alpha: composite score at the lagged signal date (0 for names the factor
+    # stage did not cover, e.g. a name suspended on the signal date).
+    score_rows = factor_panel[factor_panel["date"] == signal_date].set_index("code")
+    alpha = pd.to_numeric(score_rows["composite_score"], errors="coerce").reindex(codes).astype(float).fillna(0.0)
+    spread = float(alpha.std(ddof=0))
+    if spread > 0:
+        alpha = (alpha - float(alpha.mean())) / spread
+
+    # "Tradable" means the market lets us trade the name (in the index, priced, not
+    # suspended).  Factor eligibility only controls the alpha tilt: an index newcomer
+    # that is not yet factor-eligible must still be tradable so the projection can
+    # clamp it back inside the caps instead of carrying a compounded position.
+    eligible = set(eligible_rows.loc[eligible_rows["eligible"].astype(bool), "code"].astype(str))
+    min_listed = float(common.section(cfg, "universe", "min_listed_days", default=0) or 0)
+    availability = []
+    tilt_flags = []
+    for code in codes:
+        priced = True
+        price = decision_prices.get(code, np.nan)
+        if not np.isfinite(float(price)) or float(price) <= 0:
+            priced = False
+        if decision in in_universe.index and code in in_universe.columns and not bool(in_universe.at[decision, code]):
+            priced = False
+        if decision in suspended.index and code in suspended.columns and bool(suspended.at[decision, code]):
+            priced = False
+        availability.append(priced)
+        tilt_flags.append(
+            priced and code in eligible and not bool(is_st_map.get(code, False))
+        )
+    tradable = pd.Series(availability, index=codes, dtype=bool)
+    tilt_mask = pd.Series(tilt_flags, index=codes, dtype=bool)
+    if int(tradable.sum()) < 2:
+        raise DataQualityError(f"only {int(tradable.sum())} tradable names on {decision}; cannot optimise")
+
+    # Trailing volatility for the tracking-error scaling of the fallback path.
+    window = panel_dates[max(0, len(panel_dates) - 60) :]
+    sigma = (ret.reindex(index=window, columns=codes).std(ddof=1) * np.sqrt(252.0)).reindex(codes).fillna(0.0)
+
+    # Covariance of trailing daily returns.
+    covariance_cfg = dict(common.section(cfg, "portfolio", "covariance", default={}) or {})
+    lookback = int(covariance_cfg.get("lookback_days", 120) or 120)
+    annualization = int(covariance_cfg.get("annualization", 252) or 252)
+    covariance_window = panel_dates[max(0, len(panel_dates) - lookback) :]
+    returns_window = ret.reindex(index=covariance_window, columns=codes).astype(float)
+    covariance_result = portfolio_optimizer.ledoit_wolf_covariance(
+        returns_window,
+        annualization=annualization,
+        min_obs=int(covariance_cfg.get("min_obs", 20) or 20),
+        method=str(covariance_cfg.get("method", "ledoit_wolf")),
+        fallback=str(covariance_cfg.get("fallback", "diagonal")),
+    )
+    covariance = covariance_result.covariance.reindex(index=codes, columns=codes).fillna(0.0)
+
     # Minimum one-lot holding weight (half-capital safety margin, limit-move buffer).
-    prices = valuation_close.reindex(index=[decision], columns=screen).iloc[0].astype(float)
-    limits = pd.Series([_board_limit(board_map.get(code), bool(is_st_map.get(code, False))) for code in screen], index=screen)
+    limits = pd.Series(
+        [_board_limit(board_map.get(code), bool(is_st_map.get(code, False))) for code in codes],
+        index=codes,
+    )
+    prices = decision_prices.reindex(codes).astype(float)
     min_holding = lot * prices * (1.0 + limits + 0.02) / max(0.5 * capital, 1.0)
     min_holding = min_holding.where(np.isfinite(min_holding), 0.0)
-    weight_margin = float(constraints.get("weight_margin", 0.985))
-    lower, upper = portfolio_optimizer.feasible_bounds(
-        benchmark, constraints, weight_margin=weight_margin, min_holding=min_holding
-    )
-
-    previous_feasible_projection = project_industry_neutral_box(
-        previous_weights.to_numpy(dtype=float),
-        lower,
-        upper,
-        industry.tolist(),
-        benchmark.to_numpy(dtype=float),
-        bisection_steps=60,
-    )
-    previous_feasible = pd.Series(previous_feasible_projection.weights, index=screen, dtype=float)
 
     optimizer_cfg = dict(common.section(cfg, "portfolio", "optimizer", default={}) or {})
     fallback_reason: str | None = None
@@ -335,9 +366,12 @@ def build_portfolio(
             industry=industry,
             constraints=constraints,
             optimizer_cfg=optimizer_cfg,
-            previous_weights=previous_feasible,
+            previous_weights=current_weights,
             min_holding=min_holding,
             weight_margin=weight_margin,
+            tradable=tradable,
+            tilt_mask=tilt_mask,
+            current_weights=current_weights,
         )
     except Exception as exc:  # noqa: BLE001 - deterministic fallback is required
         fallback_reason = f"{type(exc).__name__}: {exc}"
@@ -349,18 +383,39 @@ def build_portfolio(
                 constraints=constraints,
                 min_holding=min_holding,
                 weight_margin=weight_margin,
+                tradable=tradable,
+                tilt_mask=tilt_mask,
+                current_weights=current_weights,
+                covariance=covariance,
             )
         except Exception as fallback_exc:  # noqa: BLE001 - surface as a data-quality error
             raise DataQualityError(
                 "portfolio optimisation failed and the deterministic fallback is also infeasible:"
                 f" {type(fallback_exc).__name__}: {fallback_exc}"
             ) from fallback_exc
-    weights = pd.Series(result.weights, index=screen, dtype=float)
+    weights = pd.Series(result.weights, index=codes, dtype=float)
     ex_ante_te_before_blend = float(result.ex_ante_te) if np.isfinite(result.ex_ante_te) else float(
         portfolio_optimizer.ex_ante_te(
             (weights - benchmark).to_numpy(dtype=float), covariance.to_numpy(dtype=float)
         )
     )
+
+    # Feasible current portfolio for the turnover blend: tradable names use the
+    # published bounds, untradable names are pinned at their current weight.
+    lower_full, upper_full = portfolio_optimizer.feasible_bounds(
+        benchmark, constraints, weight_margin=weight_margin, min_holding=min_holding
+    )
+    fixed_lower = np.where(tradable.to_numpy(dtype=bool), lower_full, current_weights.to_numpy(dtype=float))
+    fixed_upper = np.where(tradable.to_numpy(dtype=bool), upper_full, current_weights.to_numpy(dtype=float))
+    previous_feasible_projection = project_industry_neutral_box(
+        current_weights.to_numpy(dtype=float),
+        fixed_lower,
+        fixed_upper,
+        industry.tolist(),
+        benchmark.to_numpy(dtype=float),
+        bisection_steps=60,
+    )
+    previous_feasible = pd.Series(previous_feasible_projection.weights, index=codes, dtype=float)
 
     # Turnover cap blend (both ends feasible for the same polytope).
     turnover_limit = float(constraints.get("turnover_limit", 0.30))
@@ -381,7 +436,7 @@ def build_portfolio(
     if z_columns:
         signal_frame = factor_panel[factor_panel["date"] == signal_date].set_index("code")
         for column in z_columns:
-            values = pd.to_numeric(signal_frame[column], errors="coerce").reindex(screen).fillna(0.0)
+            values = pd.to_numeric(signal_frame[column], errors="coerce").reindex(codes).fillna(0.0)
             factor_active[column[: -len("_z")]] = float(np.dot(active, values.to_numpy(dtype=float)))
     composite_active = float(np.dot(active, alpha.to_numpy(dtype=float)))
     n_names = int((weights > 1e-10).sum())
@@ -417,7 +472,7 @@ def build_portfolio(
     target_weights_frame = pd.DataFrame(
         {
             "date": decision,
-            "code": screen,
+            "code": codes,
             "weight": weights.to_numpy(dtype=float),
             "benchmark_weight": benchmark.to_numpy(dtype=float),
             "active_weight": (weights - benchmark).to_numpy(dtype=float),
@@ -446,7 +501,7 @@ def build_portfolio(
     warnings: list[str] = []
     if fallback_reason:
         warnings.append(f"optimizer failed, deterministic rank-proportional fallback used: {fallback_reason}")
-    if result.meta.get("projection_status") not in (None, "exact"):
+    if result.projection_status not in (None, "exact"):
         warnings.append(f"projection status is {result.meta.get('projection_status')!r}")
     if covariance_result.meta.get("fallback_used"):
         warnings.append("covariance fell back to a diagonal estimate: " + str(covariance_result.meta.get("reason", "")))
@@ -467,12 +522,17 @@ def build_portfolio(
             "lookback_days": lookback,
             "annualization": annualization,
         },
-        "constraints_satisfied": {
-            "box": bool(np.all(weights.to_numpy(dtype=float) <= upper + 1e-9) and np.all(weights.to_numpy(dtype=float) >= lower - 1e-9)),
-            "fully_invested": bool(abs(float(weights.sum()) - 1.0) <= 1e-9),
-            "industry_neutral": bool(max(abs(value) for value in industry_active.values()) <= float(constraints.get("industry_active_limit", 1.0)) + 1e-9),
-            "turnover_within_cap": bool(turnover <= turnover_limit + 1e-9),
-        },
+        "constraints_satisfied": _constraints_satisfied(
+            weights=weights,
+            current_weights=current_weights,
+            tradable=tradable,
+            lower_full=lower_full,
+            upper_full=upper_full,
+            industry_active=industry_active,
+            industry_limit=float(constraints.get("industry_active_limit", 1.0)),
+            turnover=turnover,
+            turnover_limit=turnover_limit,
+        ),
     }
     risk_report = {
         "date": decision,
@@ -511,6 +571,42 @@ def build_portfolio(
         "orders": orders,
         "risk_report": risk_report,
         "weights": weights,
+    }
+
+
+def _constraints_satisfied(
+    *,
+    weights: pd.Series,
+    current_weights: pd.Series,
+    tradable: pd.Series,
+    lower_full: "np.ndarray",
+    upper_full: "np.ndarray",
+    industry_active: Mapping[str, float],
+    industry_limit: float,
+    turnover: float,
+    turnover_limit: float,
+) -> dict[str, bool]:
+    """Boolean audit of the published constraints (tradable bounds + fixed names)."""
+
+    values = weights.to_numpy(dtype=float)
+    current = current_weights.to_numpy(dtype=float)
+    tradeable = tradable.to_numpy(dtype=bool)
+    fixed_ok = bool(np.all(np.abs(values[~tradeable] - current[~tradeable]) <= 1e-9)) if (~tradeable).any() else True
+    box_ok = (
+        bool(np.all(values[tradeable] <= upper_full[tradeable] + 1e-9))
+        and bool(np.all(values[tradeable] >= lower_full[tradeable] - 1e-9))
+        if tradeable.any()
+        else True
+    )
+    return {
+        "box": bool(box_ok and fixed_ok),
+        "fully_invested": bool(abs(float(weights.sum()) - 1.0) <= 1e-9),
+        "industry_neutral": bool(
+            (max(abs(value) for value in industry_active.values()) if industry_active else 0.0)
+            <= float(industry_limit) + 1e-9
+        ),
+        "turnover_within_cap": bool(turnover <= turnover_limit + 1e-9),
+        "untradable_names_pinned": bool(fixed_ok),
     }
 
 

@@ -660,8 +660,8 @@ CONSTRAINT_KEYS: tuple[str, ...] = ("max_weight", "max_active_weight", "te_targe
 #: Fallback bounds used when ``config/strategy.yaml`` has no explicit bounds
 #: (the shipped configuration defines them in ``portfolio.constraints_bounds``).
 DEFAULT_CONSTRAINT_BOUNDS: dict[str, tuple[float, float]] = {
-    "max_weight": (0.005, 0.10),
-    "max_active_weight": (0.001, 0.05),
+    "max_weight": (0.005, 0.03),
+    "max_active_weight": (0.001, 0.015),
     "te_target": (0.01, 0.12),
     "turnover_limit": (0.05, 0.60),
 }

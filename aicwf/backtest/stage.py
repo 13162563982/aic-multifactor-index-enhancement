@@ -157,6 +157,58 @@ def _constraint_payload(
     return payload
 
 
+def audit_holdings_constraints(holdings: pd.DataFrame, cfg: Mapping[str, Any]) -> None:
+    """Fail the stage if the published holdings breach the verifier's constraints.
+
+    The independent verifier checks every holdings row (weight cap, active-weight
+    cap vs the reported benchmark proxy, and industry-active limit).  Auditing here
+    turns a late verification FAIL into an actionable stage error listing the worst
+    offenders.
+    """
+
+    constraints = dict(common.section(cfg, "backtest", "constraints", default={}) or {})
+    max_weight = float(constraints.get("max_weight", 1.0))
+    max_active = float(constraints.get("max_active_weight", 1.0))
+    industry_limit = float(constraints.get("industry_active_limit", 1.0))
+    tolerance = 1e-6
+    if holdings is None or len(holdings) == 0:
+        raise DataQualityError("holdings artifact is empty; cannot audit constraint compliance")
+    violations: list[str] = []
+    weights = pd.to_numeric(holdings["weight"], errors="coerce")
+    active = pd.to_numeric(holdings["active_weight"], errors="coerce")
+    too_big = holdings[weights > max_weight + tolerance]
+    for row in too_big.head(5).itertuples(index=False):
+        violations.append(
+            f"{row.date} {row.code}: weight {float(row.weight):.6f} > max_weight {max_weight:g}"
+        )
+    too_active = holdings[active.abs() > max_active + tolerance]
+    for row in too_active.head(5).itertuples(index=False):
+        violations.append(
+            f"{row.date} {row.code}: |active_weight| {abs(float(row.active_weight)):.6f}"
+            f" > max_active_weight {max_active:g}"
+        )
+    min_names = int(constraints.get("min_names", 0) or 0)
+    if min_names:
+        for date, group in holdings.groupby("date", sort=True):
+            count = int((pd.to_numeric(group["weight"], errors="coerce") > 1e-6).sum())
+            if count < min_names:
+                violations.append(f"{date}: only {count} held names < min_names {min_names}")
+    grouped = holdings.groupby(["date", "industry"], sort=True)["active_weight"].sum()
+    breached = grouped[grouped.abs() > industry_limit + tolerance]
+    for (date, industry), value in breached.head(5).items():
+        violations.append(
+            f"{date} industry {industry!r}: active weight {float(value):+.6f} exceeds +/-{industry_limit:g}"
+        )
+    negatives = holdings[(pd.to_numeric(holdings["shares"], errors="coerce") < 0)]
+    if len(negatives):
+        violations.append(f"{len(negatives)} holdings row(s) with negative shares")
+    if violations:
+        raise DataQualityError(
+            "holdings artifact breaches the published constraints ("
+            + f"{len(violations)} sample violation(s)): " + " | ".join(violations[:8])
+        )
+
+
 def _write_equity_curve(path: Path, frame: pd.DataFrame) -> None:
     text = frame.to_csv(index=False, float_format="%.10f", lineterminator="\n")
     write_text(path, text)
@@ -171,6 +223,7 @@ def run_backtest(ctx: RunContext) -> StageOutput:
     inputs = load_backtest_inputs(ctx)
     model = _build_model(inputs, ctx)
     result = _run_baseline(inputs, model)
+    audit_holdings_constraints(result.holdings, inputs["cfg"])
     capital = float(
         common.section(inputs["cfg"], "backtest", "initial_capital", default=1.0e8) or 1.0e8
     )

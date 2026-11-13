@@ -199,9 +199,9 @@ def test_hypothesis_constraints_are_clamped_to_config_bounds():
     }
     values, info = factor_common.clamp_hypothesis_constraints(hypothesis, cfg)
     bounds = factor_common.DEFAULT_CONSTRAINT_BOUNDS
-    assert values["max_weight"] == pytest.approx(0.10)
-    assert values["max_active_weight"] == pytest.approx(0.05)
-    assert values["te_target"] == pytest.approx(0.12)
+    assert values["max_weight"] == pytest.approx(0.03)
+    assert values["max_active_weight"] == pytest.approx(0.015)
+    assert values["te_target"] == pytest.approx(0.03)
     assert values["turnover_limit"] == pytest.approx(0.60)
     assert set(info["clamped"]) == {"max_weight", "max_active_weight", "te_target", "turnover_limit"}
     assert info["source"]["max_weight"] == "hypothesis"
@@ -216,13 +216,13 @@ def test_constraints_inside_bounds_pass_through_unchanged():
         "constraints": {
             "max_weight": 0.03,
             "max_active_weight": 0.015,
-            "te_target": 0.05,
+            "te_target": 0.03,
             "turnover_limit": 0.30,
         }
     }
     values, info = factor_common.clamp_hypothesis_constraints(hypothesis, cfg)
     assert values["max_weight"] == pytest.approx(0.03)
-    assert values["te_target"] == pytest.approx(0.05)
+    assert values["te_target"] == pytest.approx(0.03)
     assert info["clamped"] == {}
     assert all(source == "hypothesis" for source in info["source"].values())
 

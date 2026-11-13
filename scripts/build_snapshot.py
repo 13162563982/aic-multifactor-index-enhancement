@@ -208,6 +208,9 @@ def _wait_for_connectivity(client: EastmoneyClient, *, max_wait_seconds: float) 
             pause = min(60.0, 10.0 + 10.0 * attempt)
             log(f"connectivity preflight failed (attempt {attempt}); waiting {pause:.0f}s before retrying")
             time.sleep(pause)
+
+
+def _verify_only(snapshot_dir: Path) -> int:
     result = verify_snapshot(snapshot_dir, deep=True)
     print(json.dumps(result, indent=2))
     if result.get("ok"):

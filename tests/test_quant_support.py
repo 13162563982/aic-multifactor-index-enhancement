@@ -64,6 +64,7 @@ def make_market(
     n_months: int = 36,
     end: str = "2024-12-31",
     seed: int = 20260101,
+    adv_scale: float = 1.0,
 ) -> dict[str, Any]:
     """Generate a deterministic synthetic CSI-300-like market."""
 
@@ -85,7 +86,7 @@ def make_market(
     daily_returns = np.clip(daily_returns + momentum_component, -0.15, 0.15)
     close = 8.0 * np.cumprod(1.0 + daily_returns, axis=0)
     turnover = np.abs(rng.normal(0.8, 0.25, size=(n_days, n_codes))) + 0.05
-    volume = np.abs(rng.normal(2.0e6, 4.0e5, size=(n_days, n_codes))) + 1.0e5
+    volume = (np.abs(rng.normal(2.0e6, 4.0e5, size=(n_days, n_codes))) + 1.0e5) * float(adv_scale)
     amount = volume * close
 
     rows: list[pd.DataFrame] = []

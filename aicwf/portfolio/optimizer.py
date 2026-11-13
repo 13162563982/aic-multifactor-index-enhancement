@@ -17,13 +17,16 @@ subject to
 * ``sum_i w_i = 1`` (fully invested),
 * ``|sum_{i in g} w_i - sum_{i in g} wb_i| ~ 0`` (industry neutrality).
 
-The feasible set is a box with industry-total equalities; the **exact**
-Euclidean projection onto it is :func:`aicwf.portfolio.projection.project_group_box`
-(one dual bisection per industry, vectorised).  The optimiser is a projected
-gradient ascent with Nesterov acceleration and adaptive restart; because the
-gradient is ``alpha - lambda * Sigma (w - wb)`` its Lipschitz constant is
-``lambda * lambda_max(Sigma)``, which gives a step size ``1/L`` with guaranteed
-convergence.
+Untradable names (suspended / not covered by the signal) are **fixed** at their
+current holding weights; the optimiser works on the remaining free names with
+industry targets reduced by the fixed block's industry weights.  The feasible set
+is a box with industry-total equalities; the exact Euclidean projection onto it is
+:func:`aicwf.portfolio.projection.project_group_box` (one dual bisection per
+industry, vectorised).  The optimiser is a projected gradient ascent with Nesterov
+acceleration and adaptive restart; because the gradient is
+``alpha - lambda * Sigma (w - wb)`` its Lipschitz constant is
+``lambda * lambda_max(Sigma_ff)`` (the free-free block), which gives a step size
+``1/L`` with guaranteed convergence.
 
 The tracking-error target is hit by **bisection on lambda**: ex-ante tracking
 error ``sqrt((w-wb)' Sigma (w-wb))`` is monotone decreasing in ``lambda`` (the
@@ -60,7 +63,7 @@ import pandas as pd
 from aicwf.portfolio.projection import (
     ProjectionResult,
     industry_active_table,
-    project_industry_neutral_box,
+    project_group_box,
 )
 
 
@@ -128,7 +131,7 @@ def _diagonal_covariance(
         variances = np.zeros(len(codes), dtype=float)
     variances = np.where(np.isfinite(variances) & (variances >= 0), variances, np.nan)
     if np.all(~np.isfinite(variances)):
-        variances = np.full(len(codes), 1e-4 if len(clean) < 2 else 1e-4, dtype=float)
+        variances = np.full(len(codes), 1e-4, dtype=float)
     median = float(np.nanmedian(variances))
     if not np.isfinite(median) or median <= 0:
         median = 1e-4
@@ -151,42 +154,8 @@ def _symmetrise_with_floor(matrix: np.ndarray, eigen_floor: float) -> np.ndarray
 
 
 # ---------------------------------------------------------------------------
-# Optimiser
+# Constraints helpers
 # ---------------------------------------------------------------------------
-
-
-@dataclass
-class OptimizerResult:
-    weights: pd.Series
-    status: str
-    iterations: int
-    te_lambda: float
-    ex_ante_te: float
-    fallback_used: bool
-    projection_status: str = "exact"
-    meta: dict[str, Any] = field(default_factory=dict)
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "status": self.status,
-            "iterations": int(self.iterations),
-            "te_lambda": None if self.te_lambda is None else float(self.te_lambda),
-            "ex_ante_te": None if self.ex_ante_te is None else float(self.ex_ante_te),
-            "fallback_used": bool(self.fallback_used),
-            "projection_status": self.projection_status,
-            **{key: value for key, value in self.meta.items() if key not in {"weights"}},
-        }
-
-
-def ex_ante_te(active_weights: np.ndarray, covariance: np.ndarray) -> float:
-    value = float(active_weights @ covariance @ active_weights)
-    return float(math.sqrt(max(value, 0.0)))
-
-
-def _group_targets(benchmark: pd.Series, industry: pd.Series) -> dict[str, float]:
-    frame = pd.DataFrame({"benchmark": benchmark.astype(float), "industry": industry.astype(str)})
-    grouped = frame.groupby("industry", sort=True)["benchmark"].sum()
-    return {str(key): float(value) for key, value in grouped.items()}
 
 
 def feasible_bounds(
@@ -196,11 +165,7 @@ def feasible_bounds(
     weight_margin: float = 0.985,
     min_holding: pd.Series | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Box bounds implied by the per-name weight and active-weight caps.
-
-    ``min_holding`` (optional) is the minimum weight needed to buy one board lot;
-    it is only applied where it fits inside the active cap.
-    """
+    """Box bounds implied by the per-name weight and active-weight caps."""
 
     max_weight = float(constraints.get("max_weight", 1.0)) * float(weight_margin)
     max_active = float(constraints.get("max_active_weight", 1.0)) * float(weight_margin)
@@ -223,7 +188,7 @@ def _fit_group_floors(
     *,
     max_active: float,
 ) -> np.ndarray:
-    """Keep the box bounds feasible with respect to the industry totals."""
+    """Shrink minimum-lot floors until every industry target stays feasible."""
 
     industry_array = np.asarray([str(value) for value in industry], dtype=object)
     base = np.maximum(wb - float(max_active), 0.0)
@@ -242,6 +207,263 @@ def _fit_group_floors(
     return np.minimum(base + floors, upper)
 
 
+def _group_targets(benchmark: pd.Series, industry: pd.Series) -> dict[str, float]:
+    frame = pd.DataFrame({"benchmark": benchmark.astype(float), "industry": industry.astype(str)})
+    grouped = frame.groupby("industry", sort=True)["benchmark"].sum()
+    return {str(key): float(value) for key, value in grouped.items()}
+
+
+def _industry_totals(wb: np.ndarray, industry: Sequence[str]) -> dict[str, float]:
+    frame = pd.DataFrame({"benchmark": wb, "industry": [str(value) for value in industry]})
+    return {str(key): float(value) for key, value in frame.groupby("industry", sort=True)["benchmark"].sum().items()}
+
+
+# ---------------------------------------------------------------------------
+# Optimiser
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class OptimizerResult:
+    weights: pd.Series
+    status: str
+    iterations: int
+    te_lambda: float
+    ex_ante_te: float
+    fallback_used: bool
+    projection_status: str = "exact"
+    meta: dict[str, Any] = field(default_factory=dict)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "iterations": int(self.iterations),
+            "te_lambda": None if self.te_lambda is None or not math.isfinite(float(self.te_lambda)) else float(self.te_lambda),
+            "ex_ante_te": None if self.ex_ante_te is None else float(self.ex_ante_te),
+            "fallback_used": bool(self.fallback_used),
+            "projection_status": self.projection_status,
+            **{key: value for key, value in self.meta.items()},
+        }
+
+
+def ex_ante_te(active_weights: np.ndarray, covariance: np.ndarray) -> float:
+    value = float(active_weights @ covariance @ active_weights)
+    return float(math.sqrt(max(value, 0.0)))
+
+
+@dataclass
+class _Problem:
+    """Free-variable view of the constrained problem (fixed names held constant)."""
+
+    codes: list[str]
+    industry: list[str]
+    wb: np.ndarray
+    free: np.ndarray
+    fixed_weights: np.ndarray
+    covariance: np.ndarray
+    alpha: np.ndarray
+    lower: np.ndarray
+    upper: np.ndarray
+    free_codes: list[str]
+    industry_free: list[str]
+    wb_free: np.ndarray
+    target_free: dict[str, float]
+    total_free: float
+
+    @property
+    def n_free(self) -> int:
+        return int(self.free.sum())
+
+    def full_vector(self, free_values: np.ndarray) -> np.ndarray:
+        full = self.fixed_weights.copy()
+        full[self.free] = np.asarray(free_values, dtype=float)
+        return full
+
+    def project(self, free_values: np.ndarray) -> ProjectionResult:
+        result = project_group_box(
+            free_values,
+            self.lower,
+            self.upper,
+            self.industry_free,
+            self.target_free,
+            total=self.total_free,
+            bisection_steps=60,
+        )
+        full = self.full_vector(result.weights)
+        return ProjectionResult(
+            weights=full,
+            status=result.status,
+            max_abs_industry_active=result.max_abs_industry_active,
+            iterations=result.iterations,
+            detail=result.detail,
+        )
+
+
+def _build_problem(
+    *,
+    alpha: pd.Series,
+    benchmark: pd.Series,
+    covariance: pd.DataFrame,
+    industry: pd.Series,
+    constraints: Mapping[str, Any],
+    weight_margin: float,
+    min_holding: pd.Series | None,
+    tradable: pd.Series | None,
+    tilt_mask: pd.Series | None,
+    current_weights: pd.Series | None,
+) -> _Problem:
+    codes = list(alpha.index)
+    wb = pd.Series(benchmark, dtype=float).reindex(codes).fillna(0.0).astype(float)
+    total = float(wb.sum())
+    if total <= 0:
+        raise ValueError("benchmark proxy weights sum to zero")
+    wb = wb / total
+    industry_values = pd.Series(industry, dtype=object).reindex(codes).fillna("UNKNOWN").astype(str).tolist()
+    if tradable is None:
+        tradeable = np.ones(len(codes), dtype=bool)
+    else:
+        tradeable = pd.Series(tradable, dtype=bool).reindex(codes).fillna(False).to_numpy(dtype=bool)
+    current = pd.Series(current_weights, dtype=float).reindex(codes).fillna(0.0).astype(float) if current_weights is not None else pd.Series(0.0, index=codes)
+    current_values = current.to_numpy(dtype=float)
+    wb_values_raw = wb.to_numpy(dtype=float)
+    fixed_values = np.where(tradeable, 0.0, np.where(current_values > 1e-12, current_values, wb_values_raw))
+    fixed_total = float(fixed_values.sum())
+    free_mask = tradeable.copy()
+    if fixed_total > 1.0 + 1e-9:
+        raise ValueError("fixed holdings already exceed a fully invested portfolio")
+    total_free = 1.0 - fixed_total
+
+    wb_values = wb.to_numpy(dtype=float)
+    lower_full, upper_full = feasible_bounds(
+        wb, constraints, weight_margin=weight_margin, min_holding=min_holding
+    )
+    max_active_bound = float(constraints.get("max_active_weight", 1.0)) * float(weight_margin)
+    lower_full = _fit_group_floors(lower_full, upper_full, wb_values, industry_values, max_active=max_active_bound)
+
+    free_lower = lower_full[free_mask]
+    free_upper = upper_full[free_mask]
+    wb_free = wb_values[free_mask]
+    industry_free = [industry_values[index] for index in np.flatnonzero(free_mask)]
+    free_codes = [codes[index] for index in np.flatnonzero(free_mask)]
+
+    full_targets = _industry_totals(wb_values, industry_values)
+    fixed_targets = _industry_totals(fixed_values, industry_values)
+    target_free = {key: float(full_targets.get(key, 0.0) - fixed_targets.get(key, 0.0)) for key in full_targets}
+    if sum(target_free.values()) > total_free + 1e-9:
+        # The fixed block may "over-hold" an industry relative to its benchmark
+        # weight; the projection clips the free targets deterministically.
+        pass
+    covariance_values = covariance.reindex(index=codes, columns=codes).fillna(0.0).to_numpy(dtype=float)
+    covariance_values = 0.5 * (covariance_values + covariance_values.T)
+    alpha_raw = pd.Series(alpha, dtype=float).reindex(codes).fillna(0.0)
+    alpha_values = np.zeros(len(codes), dtype=float)
+    if tilt_mask is None:
+        tilt_values = tradeable.copy()
+    else:
+        tilt_values = pd.Series(tilt_mask, dtype=bool).reindex(codes).fillna(False).to_numpy(dtype=bool) & tradeable
+    if tilt_values.any():
+        spread = float(alpha_raw[tilt_values].std(ddof=0))
+        if spread > 0:
+            alpha_values[tilt_values] = (
+                alpha_raw[tilt_values].to_numpy(dtype=float) - float(alpha_raw[tilt_values].mean())
+            ) / spread
+    return _Problem(
+        codes=codes,
+        industry=industry_values,
+        wb=wb_values,
+        free=free_mask,
+        fixed_weights=fixed_values,
+        covariance=covariance_values,
+        alpha=alpha_values,
+        lower=free_lower,
+        upper=free_upper,
+        free_codes=free_codes,
+        industry_free=industry_free,
+        wb_free=wb_free,
+        target_free=target_free,
+        total_free=total_free,
+    )
+
+
+@dataclass
+class _SolveResult:
+    free_values: np.ndarray
+    iterations: int
+    te_lambda: float
+    ex_ante_te: float
+    projection_status: str
+
+
+def _run_solver(
+    problem: _Problem,
+    *,
+    lam: float,
+    start_free: np.ndarray,
+    max_iter: int,
+    tolerance: float,
+    eigenvalue_max: float,
+    alpha_full_dot_fixed: float,
+    linear_free: np.ndarray,
+    quadratic_free: np.ndarray,
+    full_benchmark: np.ndarray,
+) -> _SolveResult:
+    """Accelerated projected gradient on the free variables for one lambda."""
+
+    cov = problem.covariance
+    free = problem.free
+    fixed = problem.fixed_weights
+    cov_ff = cov[np.ix_(free, free)]
+    active_fixed = fixed - full_benchmark
+    offset = cov[np.ix_(free, np.flatnonzero(~free))] @ active_fixed[~free] if (~free).any() else np.zeros(problem.n_free)
+    lipschitz = max(float(lam) * float(eigenvalue_max), 1e-12)
+    step = 1.0 / lipschitz
+    wb_free = problem.wb_free
+    alpha_free = problem.alpha[free]
+
+    def full_of(free_values: np.ndarray) -> np.ndarray:
+        return problem.full_vector(free_values)
+
+    def objective(free_values: np.ndarray) -> float:
+        full = full_of(free_values)
+        active = full - full_benchmark
+        return float(problem.alpha @ full) - 0.5 * float(lam) * float(active @ cov @ active)
+
+    def gradient(free_values: np.ndarray) -> np.ndarray:
+        return alpha_free - float(lam) * (cov_ff @ (free_values - wb_free) + offset)
+
+    x = np.asarray(start_free, dtype=float).copy()
+    y = x.copy()
+    t = 1.0
+    value = objective(x)
+    iterations = 0
+    for iterations in range(1, max_iter + 1):
+        candidate = problem.project(y + step * gradient(y)).weights[free]
+        candidate_value = objective(candidate)
+        change = float(np.max(np.abs(candidate - x))) if len(candidate) else 0.0
+        if candidate_value >= value:
+            t_next = 0.5 * (1.0 + math.sqrt(1.0 + 4.0 * t * t))
+            y = candidate + ((t - 1.0) / t_next) * (candidate - x)
+            t = t_next
+        else:
+            y = candidate
+            t = 1.0
+        x = candidate
+        value = candidate_value
+        if change <= tolerance:
+            break
+    full = full_of(x)
+    active = full - full_benchmark
+    te = ex_ante_te(active, problem.covariance)
+    projection = problem.project(x)
+    return _SolveResult(
+        free_values=x,
+        iterations=int(iterations),
+        te_lambda=float(lam),
+        ex_ante_te=float(te),
+        projection_status=projection.status,
+    )
+
+
 def optimize_weights(
     *,
     alpha: pd.Series,
@@ -253,63 +475,47 @@ def optimize_weights(
     previous_weights: pd.Series | None = None,
     min_holding: pd.Series | None = None,
     weight_margin: float = 0.985,
+    tradable: pd.Series | None = None,
+    tilt_mask: pd.Series | None = None,
+    current_weights: pd.Series | None = None,
 ) -> OptimizerResult:
     """Projected-gradient mean-variance solution with TE targeting by lambda bisection."""
 
-    codes = list(alpha.index)
-    wb = benchmark.reindex(codes).fillna(0.0).astype(float)
-    total = float(wb.sum())
-    if total <= 0:
-        raise ValueError("benchmark proxy weights sum to zero")
-    wb = wb / total
-    cov = covariance.reindex(index=codes, columns=codes).fillna(0.0).to_numpy(dtype=float)
-    cov = 0.5 * (cov + cov.T)
-    alpha_values = alpha.reindex(codes).astype(float).to_numpy(dtype=float)
-    alpha_values = np.where(np.isfinite(alpha_values), alpha_values, 0.0)
-    spread = float(alpha_values.std(ddof=0))
-    if spread > 0:
-        alpha_values = (alpha_values - alpha_values.mean()) / spread
-    wb_values = wb.to_numpy(dtype=float)
-    industry_values = industry.reindex(codes).fillna("UNKNOWN").astype(str).tolist()
-    group_targets = _group_targets(wb, pd.Series(industry_values, index=codes))
-
-    lower, upper = feasible_bounds(
-        wb, constraints, weight_margin=weight_margin, min_holding=min_holding
+    problem = _build_problem(
+        alpha=alpha,
+        benchmark=benchmark,
+        covariance=covariance,
+        industry=industry,
+        constraints=constraints,
+        weight_margin=weight_margin,
+        min_holding=min_holding,
+        tradable=tradable,
+        tilt_mask=tilt_mask,
+        current_weights=current_weights,
     )
-    if np.any(lower > upper + 1e-12):
-        raise ValueError("infeasible weight bounds")
-    if float(upper.sum()) < 1.0 - 1e-9 or float(lower.sum()) > 1.0 + 1e-9:
-        raise ValueError(
-            "infeasible weight bounds: the name caps cannot fund a fully invested portfolio"
+    free_mask = problem.free
+    if problem.n_free < 1:
+        weights = pd.Series(problem.fixed_weights, index=problem.codes, dtype=float)
+        return OptimizerResult(
+            weights=weights,
+            status="no_tradable_names",
+            iterations=0,
+            te_lambda=float("nan"),
+            ex_ante_te=ex_ante_te(problem.fixed_weights - problem.wb, problem.covariance),
+            fallback_used=False,
+            projection_status="exact",
+            meta={"n_names": int((weights > 0).sum()), "max_industry_active": 0.0},
         )
-    max_active_bound = float(constraints.get("max_active_weight", 1.0)) * float(weight_margin)
-    lower = _fit_group_floors(
-        lower, upper, wb_values, industry_values, max_active=max_active_bound
-    )
+    if float(problem.upper.sum()) < problem.total_free - 1e-9 or float(problem.lower.sum()) > problem.total_free + 1e-9:
+        raise ValueError("infeasible free-variable bounds for a fully invested portfolio")
 
-    def project(vector: np.ndarray) -> ProjectionResult:
-        return project_industry_neutral_box(
-            vector,
-            lower,
-            upper,
-            industry_values,
-            wb_values,
-            bisection_steps=60,
-        )
-
-    base_projection = project(wb_values)
-    feasible_benchmark = base_projection.weights
-    start = feasible_benchmark
-    if previous_weights is not None:
-        previous = previous_weights.reindex(codes).fillna(0.0).to_numpy(dtype=float)
-        start = project(previous).weights
-
+    cov_ff = problem.covariance[np.ix_(free_mask, free_mask)]
     try:
-        eigenvalue_max = float(np.max(np.linalg.eigvalsh(cov))) if len(codes) > 1 else float(cov[0, 0])
+        eigenvalue_max = float(np.max(np.linalg.eigvalsh(cov_ff))) if problem.n_free > 0 else 1.0
     except np.linalg.LinAlgError:  # pragma: no cover
-        eigenvalue_max = float(np.max(np.diag(cov)))
+        eigenvalue_max = float(np.max(np.diag(cov_ff)))
     if not np.isfinite(eigenvalue_max) or eigenvalue_max <= 0:
-        eigenvalue_max = float(np.max(np.diag(cov))) if len(codes) else 1e-8
+        eigenvalue_max = float(np.max(np.diag(cov_ff))) if problem.n_free else 1e-8
     if not np.isfinite(eigenvalue_max) or eigenvalue_max <= 0:
         raise ValueError("covariance is degenerate")
 
@@ -322,18 +528,26 @@ def optimize_weights(
     lambda_high = float(max(lambda_bounds))
     te_target = float(constraints.get("te_target", 0.05))
 
-    solver = _ProjectedGradientSolver(
-        alpha=alpha_values,
-        benchmark=wb_values,
-        covariance=cov,
-        project=project,
-        max_iter=max_iter,
-        tolerance=tolerance,
-        eigenvalue_max=eigenvalue_max,
-    )
+    if previous_weights is not None:
+        previous = pd.Series(previous_weights, dtype=float).reindex(problem.codes).fillna(0.0).to_numpy()
+        previous_free = previous[free_mask]
+        start_free = problem.project(previous_free).weights[free_mask]
+    else:
+        start_free = problem.project(problem.wb_free).weights[free_mask]
 
     def solve(lam: float, warm: _SolveResult | None = None) -> _SolveResult:
-        return solver.solve(lam, start=start if warm is None else warm.weights)
+        return _run_solver(
+            problem,
+            lam=lam,
+            start_free=start_free if warm is None else warm.free_values,
+            max_iter=max_iter,
+            tolerance=tolerance,
+            eigenvalue_max=eigenvalue_max,
+            alpha_full_dot_fixed=0.0,
+            linear_free=np.zeros(problem.n_free),
+            quadratic_free=np.zeros(problem.n_free),
+            full_benchmark=problem.wb,
+        )
 
     high_result = solve(lambda_high)
     low_result = solve(lambda_low)
@@ -360,12 +574,13 @@ def optimize_weights(
             if abs(hi - lo) <= max(1e-12, 1e-9 * hi):
                 break
         status = "ok"
-    weights = pd.Series(best.weights, index=codes, dtype=float)
-    projection = project(weights.to_numpy(dtype=float))
-    industry_active = industry_active_table(weights, wb, industry.reindex(codes))
+
+    full_weights = problem.full_vector(best.free_values)
+    weights = pd.Series(full_weights, index=problem.codes, dtype=float)
+    projection = problem.project(best.free_values)
+    industry_active = industry_active_table(weights, pd.Series(problem.wb, index=problem.codes), pd.Series(problem.industry, index=problem.codes))
     max_industry_active = max(abs(value) for value in industry_active.values()) if industry_active else 0.0
     meta = {
-        "covariance_method": "annualised",
         "max_industry_active": float(max_industry_active),
         "lambda_low": lambda_low,
         "lambda_high": lambda_high,
@@ -373,11 +588,8 @@ def optimize_weights(
         "bracket_low_te": float(low_result.ex_ante_te),
         "bracket_high_te": float(high_result.ex_ante_te),
         "n_names": int((weights > 0).sum()),
-        "objective": float(
-            float(alpha_values @ weights.to_numpy(dtype=float))
-            - 0.5 * float(best.te_lambda) * float(best.ex_ante_te) ** 2
-        ),
-        "projection_status": projection.status,
+        "n_free": int(problem.n_free),
+        "fixed_weight": float(float(problem.fixed_weights.sum())),
     }
     return OptimizerResult(
         weights=weights,
@@ -389,69 +601,6 @@ def optimize_weights(
         projection_status=projection.status,
         meta=meta,
     )
-
-
-@dataclass
-class _SolveResult:
-    weights: np.ndarray
-    iterations: int
-    te_lambda: float
-    ex_ante_te: float
-    projection_status: str
-    meta: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class _ProjectedGradientSolver:
-    alpha: np.ndarray
-    benchmark: np.ndarray
-    covariance: np.ndarray
-    project: Any
-    max_iter: int
-    tolerance: float
-    eigenvalue_max: float
-
-    def solve(self, lam: float, *, start: np.ndarray) -> _SolveResult:
-        lam = float(lam)
-        lipschitz = max(lam * float(self.eigenvalue_max), 1e-12)
-        step = 1.0 / lipschitz
-        w = np.asarray(start, dtype=float).copy()
-        y = w.copy()
-        t = 1.0
-        active = w - self.benchmark
-        objective = float(self.alpha @ w) - 0.5 * lam * float(active @ self.covariance @ active)
-        iterations = 0
-        for iterations in range(1, self.max_iter + 1):
-            y_active = y - self.benchmark
-            gradient = self.alpha - lam * (self.covariance @ y_active)
-            candidate = self.project(y + step * gradient).weights
-            candidate_active = candidate - self.benchmark
-            candidate_objective = float(self.alpha @ candidate) - 0.5 * lam * float(
-                candidate_active @ self.covariance @ candidate_active
-            )
-            change = float(np.max(np.abs(candidate - w))) if len(candidate) else 0.0
-            if candidate_objective >= objective:  # FISTA momentum step
-                t_next = 0.5 * (1.0 + math.sqrt(1.0 + 4.0 * t * t))
-                y = candidate + ((t - 1.0) / t_next) * (candidate - w)
-                t = t_next
-            else:  # adaptive restart keeps the accelerated scheme monotone
-                y = candidate
-                t = 1.0
-            w = candidate
-            objective = candidate_objective
-            if change <= self.tolerance:
-                break
-        active = w - self.benchmark
-        te = ex_ante_te(active, self.covariance)
-        projection = self.project(w)
-        return _SolveResult(
-            weights=np.asarray(w, dtype=float),
-            iterations=int(iterations),
-            te_lambda=lam,
-            ex_ante_te=float(te),
-            projection_status=projection.status,
-            meta={"projection_max_industry_active": float(projection.max_abs_industry_active)},
-        )
 
 
 # ---------------------------------------------------------------------------
@@ -467,54 +616,69 @@ def rank_proportional_fallback(
     constraints: Mapping[str, Any],
     min_holding: pd.Series | None = None,
     weight_margin: float = 0.985,
+    tradable: pd.Series | None = None,
+    tilt_mask: pd.Series | None = None,
+    current_weights: pd.Series | None = None,
+    covariance: pd.DataFrame | None = None,
 ) -> OptimizerResult:
     """Deterministic rank-proportional clipped weights (used when the QP fails).
 
     Scores are converted to cross-sectional ranks in ``[0, 1]``; the active tilt
     is proportional to ``rank - mean(rank)`` scaled to at most
-    ``max_active_weight`` and projected onto the same feasible set.
+    ``max_active_weight`` and projected onto the same feasible set.  Untradable
+    names stay fixed at their current holding weights, exactly as in the optimiser.
     """
 
-    codes = list(alpha.index)
-    wb = benchmark.reindex(codes).fillna(0.0).astype(float)
-    total = float(wb.sum())
-    if total <= 0:
-        raise ValueError("benchmark proxy weights sum to zero")
-    wb = wb / total
-    wb_values = wb.to_numpy(dtype=float)
-    industry_values = industry.reindex(codes).fillna("UNKNOWN").astype(str).tolist()
-    group_targets = _group_targets(wb, pd.Series(industry_values, index=codes))
-    lower, upper = feasible_bounds(
-        wb, constraints, weight_margin=weight_margin, min_holding=min_holding
+    if covariance is None:
+        codes = list(alpha.index)
+        covariance = pd.DataFrame(np.eye(len(codes)), index=codes, columns=codes)
+    problem = _build_problem(
+        alpha=alpha,
+        benchmark=benchmark,
+        covariance=covariance,
+        industry=industry,
+        constraints=constraints,
+        weight_margin=weight_margin,
+        min_holding=min_holding,
+        tradable=tradable,
+        tilt_mask=tilt_mask,
+        current_weights=current_weights,
     )
-    max_active_bound = float(constraints.get("max_active_weight", 1.0)) * float(weight_margin)
-    lower = _fit_group_floors(
-        lower, upper, wb_values, industry_values, max_active=max_active_bound
-    )
-    ranks = pd.Series(alpha.reindex(codes).astype(float)).rank(method="average", pct=True).to_numpy(dtype=float)
+    free_mask = problem.free
+    if problem.n_free < 1:
+        weights = pd.Series(problem.fixed_weights, index=problem.codes, dtype=float)
+        return OptimizerResult(
+            weights=weights,
+            status="fallback_rank_proportional",
+            iterations=0,
+            te_lambda=float("nan"),
+            ex_ante_te=float("nan"),
+            fallback_used=True,
+            projection_status="exact",
+            meta={"n_names": int((weights > 0).sum()), "max_industry_active": 0.0},
+        )
+    alpha_free = problem.alpha[free_mask]
+    ranks = pd.Series(alpha_free).rank(method="average", pct=True).to_numpy(dtype=float)
     ranks = np.where(np.isfinite(ranks), ranks, 0.5)
-    tilt = ranks - float(np.mean(ranks)) if len(ranks) else np.zeros(0)
+    tilt = ranks - float(np.mean(ranks))
     max_abs = float(np.max(np.abs(tilt))) if len(tilt) else 0.0
     max_active = float(constraints.get("max_active_weight", 0.1)) * float(weight_margin) * 0.9
     scale = (max_active / max_abs) if max_abs > 0 else 0.0
-    raw = wb_values + scale * tilt
-    projection = project_industry_neutral_box(
-        raw,
-        lower,
-        upper,
-        industry_values,
-        wb_values,
-        bisection_steps=60,
+    raw_free = problem.wb_free + scale * tilt
+    projection = problem.project(raw_free)
+    weights = pd.Series(projection.weights, index=problem.codes, dtype=float)
+    industry_active = industry_active_table(
+        weights,
+        pd.Series(problem.wb, index=problem.codes),
+        pd.Series(problem.industry, index=problem.codes),
     )
-    weights = pd.Series(projection.weights, index=codes, dtype=float)
-    industry_active = industry_active_table(weights, wb, industry.reindex(codes))
-    te = None
+    active = problem.full_vector(projection.weights[free_mask]) - problem.wb
     return OptimizerResult(
         weights=weights,
         status="fallback_rank_proportional",
         iterations=0,
         te_lambda=float("nan"),
-        ex_ante_te=float("nan") if te is None else float(te),
+        ex_ante_te=ex_ante_te(active, problem.covariance),
         fallback_used=True,
         projection_status=projection.status,
         meta={
@@ -530,6 +694,7 @@ __all__ = [
     "CovarianceResult",
     "OptimizerResult",
     "ex_ante_te",
+    "feasible_bounds",
     "ledoit_wolf_covariance",
     "optimize_weights",
     "rank_proportional_fallback",

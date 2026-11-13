@@ -509,6 +509,12 @@ def run_eval(
     candidate_config = _run_config(candidate_dir)
     if baseline_config:
         config_changes = config_overrides_applied(baseline_config, candidate_config, _WATCH_CONFIG_KEYS)
+        # Registry storage paths are evaluation harness plumbing, not candidate changes.
+        config_changes = [
+            change
+            for change in config_changes
+            if not str(change.get("key", "")).startswith(("gates.change_control.registry.", "gates.registry."))
+        ]
 
     prompt_hashes: dict[str, str] = {}
     from aicwf.eval.baseline import prompt_hashes as _prompt_hashes

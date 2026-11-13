@@ -334,6 +334,40 @@ def test_check_cited_numbers_flags_inventions() -> None:
     assert "42.5" in unverified
 
 
+def test_check_cited_numbers_is_unit_aware_percent_fraction_and_bp() -> None:
+    # Artifact stores fractions; prose legitimately writes percent / basis points.
+    allowed = build_allowed_numbers(
+        {"constraints": {"max_active_weight": 0.015, "impact_bps": 0.00025}}
+    )
+    unverified, verified = check_cited_numbers(
+        "The active-weight cap is 1.5% (i.e. 1.5) while impact is 2.5 bp.", allowed
+    )
+    assert unverified == []
+    assert "1.5%" in verified
+    assert "1.5" in verified
+    assert "2.5" in verified
+
+
+def test_check_cited_numbers_stays_strict_for_absent_numbers() -> None:
+    allowed = {Decimal("0.015")}
+    unverified, _ = check_cited_numbers("Invented 1.51 and 42.5 with 0.015.", allowed)
+    assert "1.51" in unverified
+    assert "42.5" in unverified
+
+
+def test_check_cited_numbers_matches_bare_percent_point_citation() -> None:
+    # A model may write "annualised excess return 2.34" meaning 2.34%.
+    allowed = build_allowed_numbers(
+        {"metrics": {"annualized_excess_return": 0.0234, "tracking_error": 0.049}}
+    )
+    unverified, _ = check_cited_numbers(
+        "Annualised excess return was 2.34 and tracking error 4.9.", allowed
+    )
+    assert unverified == []
+    unverified_bad, _ = check_cited_numbers("Annualised excess return was 2.4.", allowed)
+    assert "2.4" in unverified_bad  # 2.4 is not 2.34 at the quoted precision
+
+
 def test_check_markdown_contract_reports_all_problems() -> None:
     allowed = build_allowed_numbers({"metrics": {"annualized_excess_return": 0.0234}})
     errors = check_markdown_contract(

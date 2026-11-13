@@ -275,6 +275,21 @@ def test_tampered_metrics_are_reported_as_discrepancies(clean_run: Path, tmp_pat
     assert any(record["field"].endswith("annualized_excess_return") for record in discrepancies)
 
 
+def test_data_quality_snapshot_hash_mismatch_fails(clean_run: Path, tmp_path: Path) -> None:
+    """A run whose data_prep used a different snapshot version must not pass."""
+
+    run = _copy_run(clean_run, tmp_path)
+    data_quality_path = run / "02_data" / "data_quality.json"
+    data_quality = json.loads(data_quality_path.read_text(encoding="utf-8"))
+    data_quality["snapshot_hash"] = "f" * 64
+    _write_json(data_quality_path, data_quality)
+    verification = _verify(run)
+    assert verification["verdict"] == "FAIL"
+    hashes = _check(verification, "artifact_hashes")
+    assert hashes["status"] == "fail"
+    assert "data_quality.snapshot_hash" in hashes["detail"]
+
+
 def test_tampered_snapshot_is_detected(clean_run: Path, tmp_path: Path) -> None:
     snapshot_copy = tmp_path / "snapshot"
     shutil.copytree(DEFAULT_SNAPSHOT_DIR, snapshot_copy)
