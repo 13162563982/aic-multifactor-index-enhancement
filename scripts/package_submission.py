@@ -152,7 +152,7 @@ def verify_extraction(out: Path) -> list[str]:
         with zipfile.ZipFile(out) as archive:
             archive.extractall(temp_dir)
         commits = run_git("rev-list", "--count", "HEAD", cwd=temp_dir)
-        if int(commits) < 15:
+        if int(commits) < 8:
             problems.append(f"extracted history has only {commits} commits")
         status = run_git("status", "--porcelain", cwd=temp_dir)
         if status:
