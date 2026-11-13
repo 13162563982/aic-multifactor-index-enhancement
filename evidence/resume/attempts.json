@@ -1,0 +1,145 @@
+[
+  {
+    "run_id": "resume-demo-2",
+    "stage": "backtest",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:20:25+00:00",
+    "finished_at_utc": "2026-11-13T04:20:33+00:00",
+    "duration_s": 8.031999999999243,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "data_prep",
+    "attempt": 1,
+    "status": "crashed",
+    "started_at_utc": "2026-11-13T04:19:29+00:00",
+    "finished_at_utc": "2026-11-13T04:19:48+00:00",
+    "duration_s": 0.0,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "data_prep",
+    "attempt": 2,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:19:50+00:00",
+    "finished_at_utc": "2026-11-13T04:20:08+00:00",
+    "duration_s": 18.46899999999914,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "factor_build",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:20:08+00:00",
+    "finished_at_utc": "2026-11-13T04:20:25+00:00",
+    "duration_s": 17.0,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "factor_review",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:20:25+00:00",
+    "finished_at_utc": "2026-11-13T04:20:25+00:00",
+    "duration_s": 0.031000000000858563,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "hypothesis",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:19:29+00:00",
+    "finished_at_utc": "2026-11-13T04:19:29+00:00",
+    "duration_s": 0.01599999999962165,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "intake",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:19:29+00:00",
+    "finished_at_utc": "2026-11-13T04:19:29+00:00",
+    "duration_s": 0.09399999999914144,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "portfolio",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:22:42+00:00",
+    "finished_at_utc": "2026-11-13T04:22:48+00:00",
+    "duration_s": 6.125,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "report",
+    "attempt": 1,
+    "status": "failed",
+    "started_at_utc": "2026-11-13T04:23:33+00:00",
+    "finished_at_utc": "2026-11-13T04:23:33+00:00",
+    "duration_s": 0.01599999999962165,
+    "error_type": "ReplayCacheMiss",
+    "error": "replay cache miss for model 'qwen3.5:9b' (key 1c0cc2597beb8fc85a99374cf95f062ad23431becd31f74840da87d9758db946); cache dir: D:\\\u684c\u9762real\\FISF-Course\\AIC\\multifactor-index-enhancement-agent\\evidence\\llm_cache. Deterministic replay never calls a live model - re-record the cache with AICWF_LLM_RECORD=1 and --llm-mode ollama."
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "report",
+    "attempt": 2,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:24:28+00:00",
+    "finished_at_utc": "2026-11-13T04:25:15+00:00",
+    "duration_s": 47.0619999999999,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "robustness",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:20:33+00:00",
+    "finished_at_utc": "2026-11-13T04:22:42+00:00",
+    "duration_s": 128.46800000000076,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "robustness_review",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:22:42+00:00",
+    "finished_at_utc": "2026-11-13T04:22:42+00:00",
+    "duration_s": 0.01599999999962165,
+    "error_type": null,
+    "error": null
+  },
+  {
+    "run_id": "resume-demo-2",
+    "stage": "verification",
+    "attempt": 1,
+    "status": "completed",
+    "started_at_utc": "2026-11-13T04:22:48+00:00",
+    "finished_at_utc": "2026-11-13T04:23:33+00:00",
+    "duration_s": 45.625,
+    "error_type": null,
+    "error": null
+  }
+]

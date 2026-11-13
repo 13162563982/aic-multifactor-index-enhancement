@@ -1,0 +1,94 @@
+sources:
+  eastmoney:
+    hosts:
+    - push2his.eastmoney.com
+    - push2.eastmoney.com
+    - 82.push2.eastmoney.com
+    - 1.push2.eastmoney.com
+    kline_url: https://{host}/api/qt/stock/kline/get
+    list_url: https://{host}/api/qt/clist/get
+    datacenter_url: https://datacenter-web.eastmoney.com/api/data/v1/get
+    index_secid: '1.000300'
+    csi300_board: b:BK0500
+    page_size: 100
+    timeout_s: 20
+    user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AICWF academic research
+    ipv4_only: true
+    retry:
+      attempts: 10
+      backoff_seconds:
+      - 0.5
+      - 1.0
+      - 2.0
+      - 3.0
+      - 5.0
+      - 8.0
+      - 12.0
+      - 18.0
+      - 25.0
+      - 30.0
+      jitter_fraction: 0.3
+    kline_retry:
+      attempts: 12
+      backoff_seconds:
+      - 0.4
+      - 0.8
+      - 1.5
+      - 2.5
+      - 4.0
+      - 6.0
+      - 8.0
+      - 10.0
+      - 12.0
+      - 15.0
+      - 18.0
+      - 20.0
+      jitter_fraction: 0.3
+    fundamentals_retry:
+      attempts: 8
+      backoff_seconds:
+      - 0.5
+      - 1.0
+      - 2.0
+      - 3.0
+      - 5.0
+      - 8.0
+      - 12.0
+      jitter_fraction: 0.3
+    kline:
+      ut: fa5fd1943c7b386f172d6893dbfba10b
+      hosts:
+      - push2his.eastmoney.com
+      - push2his.eastmoney.com
+      - push2.eastmoney.com
+      fields1: f1,f2,f3,f4,f5,f6
+      fields2: f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61
+    list_fields: f12,f13,f14,f2,f3,f8,f9,f20,f21,f23,f26,f100
+    polite_delay_seconds: 0.5
+  fundamentals:
+    report: RPT_F10_FINANCE_MAINFINADATA
+    page_size: 60
+    fields:
+    - SECUCODE
+    - REPORT_DATE
+    - NOTICE_DATE
+    - EPSJB
+    - BPS
+    - TOTALOPERATEREVE
+    - PARENTNETPROFIT
+    - TOTALOPERATEREVETZ
+    - PARENTNETPROFITTZ
+    - MLR
+    - MGJYXJJE
+snapshot:
+  root: data/snapshots
+  schema_version: 1.1.0
+  max_price_lookback_days: 4200
+  min_universe_size: 250
+  keep_raw_downloads: false
+quality:
+  max_missing_price_ratio: 0.1
+  max_stale_trading_days: 5
+  min_fundamental_coverage: 0.85
+  duplicate_rows_allowed: false
+  require_positive_prices: true

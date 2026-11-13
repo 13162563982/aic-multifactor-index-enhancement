@@ -1,0 +1,47 @@
+{
+  "02_data/panel.parquet": {
+    "resume_run": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+    "final_run": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+    "identical": true
+  },
+  "02_data/benchmark.parquet": {
+    "resume_run": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+    "final_run": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+    "identical": true
+  },
+  "02_data/data_quality.json": {
+    "resume_run": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+    "final_run": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+    "identical": true
+  },
+  "02_data/pit_audit.json": {
+    "resume_run": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+    "final_run": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+    "identical": true
+  },
+  "03_factors/factor_panel.parquet": {
+    "resume_run": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+    "final_run": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+    "identical": true
+  },
+  "05_backtest/ledger.parquet": {
+    "resume_run": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+    "final_run": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+    "identical": true
+  },
+  "05_backtest/metrics.json": {
+    "resume_run": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+    "final_run": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+    "identical": true
+  },
+  "08_portfolio/target_weights.parquet": {
+    "resume_run": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+    "final_run": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+    "identical": true
+  },
+  "09_verification/verification.json": {
+    "resume_run": "26799e4c54fd7c064e222569e52f870d95c07f40ad44f5e78b5a2e2cb7251c46",
+    "final_run": "8730a675681f2bea955357a6eba72d807fdc6a2162b5dd114d552ebfcff7fe08",
+    "identical": false
+  }
+}

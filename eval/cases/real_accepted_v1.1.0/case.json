@@ -1,0 +1,16 @@
+{
+  "baseline": "../../baseline_v1.0.0.json",
+  "candidate_run": "../../../outputs/runs/cand-a-2026-11-12",
+  "candidate_version": "v1.1.0",
+  "case_id": "real_accepted_v1.1.0",
+  "change_summary": "prompts/report_writer.md disclosure requirements added.",
+  "config_overrides": {},
+  "data_scope": "real_csi300",
+  "description": "Real-data candidate v1.1.0: report-writer prompt override adding explicit disclosure of failed robustness checks and the realised-vs-ex-ante tracking-error gap. Strategy config unchanged; accepted because all hard gates and all metric tolerances hold (metrics even improved slightly; no config change beyond the prompt).",
+  "evidence_mode": "real",
+  "expected_decision": "accept",
+  "notes": "Real candidate run executed via the pipeline with AICWF_PROMPT_DIR override; decision produced by aicwf.eval.runner against eval/baseline_v1.0.0.json.",
+  "prompt_overrides": {
+    "report_writer": "prompts/report_writer.md"
+  }
+}

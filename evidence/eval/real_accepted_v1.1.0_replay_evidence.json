@@ -1,0 +1,64 @@
+{
+  "artifact_hashes": {
+    "02_data/benchmark.parquet": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+    "02_data/data_quality.json": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+    "02_data/panel.parquet": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+    "02_data/pit_audit.json": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+    "03_factors/factor_panel.parquet": "f19407b3ecbf7b7751f9fcee1d2f1482bb7fd028feece301d1ef221b6e879c3a",
+    "03_factors/factor_report.json": "5d60e75f8a26b8894caeb7291168ae29f806d10db80d5e7ef487603b7f52c7db",
+    "05_backtest/equity_curve.csv": "33f230b79b801e023d1b4c38c46f4685b5b19f694b287d280a6eb92e27d892cd",
+    "05_backtest/holdings.parquet": "847229dcf54dafe374443665df43866bfa8043338d2149603645581f43b47b23",
+    "05_backtest/ledger.parquet": "a2234126aa0bf2d0d8b2fa4d726b9377d99fe96fc9b61fd8364a374c4d119fee",
+    "05_backtest/metrics.json": "5d72cc40ae59d6e6b6208b0588f029a9ba86bffd9333018d27e63c472e83bd70",
+    "08_portfolio/orders.csv": "6dd19dc5d8c4cb2f44f4e005a1cf0effa18313583b0296b308a1301d0f95e487",
+    "08_portfolio/risk_report.json": "6b974b32eacdec2bc0d81417e42cbb08bca09b7db5fd86f31ee6b4fedbac04a9",
+    "08_portfolio/target_weights.parquet": "e03ed200420b64f778b180eaa19996f575f5c2669ffdab2a8d82f21a26633350"
+  },
+  "config_hash_of_replay": "7caa49dedbf1f55fcf80e5d6b4b157c367b5da6b938543478ee6d9c2f5ffcbe2",
+  "excluded_from_scope": [
+    "robustness",
+    "agent-generated markdown (rationale/reviews/report)"
+  ],
+  "identical": true,
+  "method": "independent numeric-stage replay (data_prep -> factor_build -> backtest -> portfolio) from the identical frozen snapshot and configuration; agent-generated markdown excluded",
+  "n_artifacts": 13,
+  "replay_artifact_hashes": {
+    "02_data/benchmark.parquet": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+    "02_data/data_quality.json": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+    "02_data/panel.parquet": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+    "02_data/pit_audit.json": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+    "03_factors/factor_panel.parquet": "f19407b3ecbf7b7751f9fcee1d2f1482bb7fd028feece301d1ef221b6e879c3a",
+    "03_factors/factor_report.json": "5d60e75f8a26b8894caeb7291168ae29f806d10db80d5e7ef487603b7f52c7db",
+    "05_backtest/equity_curve.csv": "33f230b79b801e023d1b4c38c46f4685b5b19f694b287d280a6eb92e27d892cd",
+    "05_backtest/holdings.parquet": "847229dcf54dafe374443665df43866bfa8043338d2149603645581f43b47b23",
+    "05_backtest/ledger.parquet": "a2234126aa0bf2d0d8b2fa4d726b9377d99fe96fc9b61fd8364a374c4d119fee",
+    "05_backtest/metrics.json": "5d72cc40ae59d6e6b6208b0588f029a9ba86bffd9333018d27e63c472e83bd70",
+    "08_portfolio/orders.csv": "6dd19dc5d8c4cb2f44f4e005a1cf0effa18313583b0296b308a1301d0f95e487",
+    "08_portfolio/risk_report.json": "6b974b32eacdec2bc0d81417e42cbb08bca09b7db5fd86f31ee6b4fedbac04a9",
+    "08_portfolio/target_weights.parquet": "e03ed200420b64f778b180eaa19996f575f5c2669ffdab2a8d82f21a26633350"
+  },
+  "replay_scope": {
+    "backtest": [
+      "ledger.parquet",
+      "holdings.parquet",
+      "metrics.json",
+      "equity_curve.csv"
+    ],
+    "data_prep": [
+      "panel.parquet",
+      "benchmark.parquet",
+      "data_quality.json",
+      "pit_audit.json"
+    ],
+    "factor_build": [
+      "factor_panel.parquet",
+      "factor_report.json"
+    ],
+    "portfolio": [
+      "target_weights.parquet",
+      "orders.csv",
+      "risk_report.json"
+    ]
+  },
+  "run_id": "cand-a-2026-11-12"
+}

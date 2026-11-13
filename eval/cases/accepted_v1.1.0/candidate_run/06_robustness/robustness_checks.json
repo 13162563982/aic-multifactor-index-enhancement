@@ -4,20 +4,20 @@
     "name": "subperiod_consistency",
     "status": "pass",
     "threshold": 0.0,
-    "value": 0.22812522751449427
+    "value": 0.234749596745509
   },
   {
     "detail": "excess return survives 3x costs in the demo estimate",
     "name": "cost_sensitivity",
     "status": "pass",
     "threshold": -0.0075,
-    "value": 0.22812522751449427
+    "value": 0.234749596745509
   },
   {
     "detail": "randomized-signal placebo does not reproduce the result",
     "name": "placebo",
     "status": "pass",
-    "threshold": 0.22812522751449427,
+    "threshold": 0.234749596745509,
     "value": 0.0
   },
   {
@@ -25,6 +25,6 @@
     "name": "deflated_sharpe",
     "status": "pass",
     "threshold": 0.0,
-    "value": 1.705350158064031
+    "value": 1.712386601575127
   }
 ]

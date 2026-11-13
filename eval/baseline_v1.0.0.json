@@ -1,29 +1,166 @@
 {
   "baseline_id": "baseline_v1.0.0",
   "benchmark_metrics": {
-    "annualized_return": -0.021676444581363308,
-    "annualized_volatility": 0.17935887228890954,
-    "cumulative_return": -0.06558219899368978,
-    "end_date": "2024-12-31",
-    "max_drawdown": -0.34488935261550924,
-    "n_days": 781,
-    "n_returns": 780,
-    "sharpe": -0.12085515650682226,
-    "start_date": "2022-01-04"
+    "annualized_return": 0.0147662491,
+    "annualized_volatility": 0.1883655198,
+    "cumulative_return": 0.1657100211,
+    "end_date": "2026-11-12",
+    "max_drawdown": -0.4560261955,
+    "n_days": 2637,
+    "n_returns": 2636,
+    "sharpe": 0.0783914651,
+    "start_date": "2016-01-04"
   },
   "config": {
     "budgets": {
+      "llm": {
+        "price_per_1k_input_usd": 0.0,
+        "price_per_1k_output_usd": 0.0
+      },
+      "retry": {
+        "escalate_categories": [
+          "ValidationError",
+          "DataQualityError",
+          "EscalationRequired"
+        ],
+        "non_retryable_categories": [
+          "NonRetryableError",
+          "ConfigError"
+        ],
+        "transient_categories": [
+          "RetryableError",
+          "TimeoutError",
+          "ConnectionError",
+          "StageTimeout",
+          "TransientError",
+          "TransientFailure"
+        ]
+      },
       "run": {
         "max_cost_usd": 0.0,
         "max_llm_calls": 40,
+        "max_retries_per_step": 3,
         "max_revision_rounds": 2,
         "max_tokens_total": 200000,
-        "max_wall_seconds": 900
+        "max_wall_seconds": 900,
+        "retry_backoff_seconds": [
+          1.0,
+          2.0,
+          4.0
+        ],
+        "retry_jitter_fraction": 0.2,
+        "stage_default_timeout_s": 600
       }
     },
     "data": {
+      "quality": {
+        "duplicate_rows_allowed": false,
+        "max_missing_price_ratio": 0.1,
+        "max_stale_trading_days": 5,
+        "min_fundamental_coverage": 0.85,
+        "require_positive_prices": true
+      },
       "snapshot": {
-        "root": "tests/fixtures/mini_snapshot"
+        "keep_raw_downloads": false,
+        "max_price_lookback_days": 4200,
+        "min_universe_size": 250,
+        "root": "data/snapshots",
+        "schema_version": "1.1.0"
+      },
+      "sources": {
+        "eastmoney": {
+          "csi300_board": "b:BK0500",
+          "datacenter_url": "https://datacenter-web.eastmoney.com/api/data/v1/get",
+          "fundamentals_retry": {
+            "attempts": 8,
+            "backoff_seconds": [
+              0.5,
+              1.0,
+              2.0,
+              3.0,
+              5.0,
+              8.0,
+              12.0
+            ],
+            "jitter_fraction": 0.3
+          },
+          "hosts": [
+            "push2his.eastmoney.com",
+            "push2.eastmoney.com",
+            "82.push2.eastmoney.com",
+            "1.push2.eastmoney.com"
+          ],
+          "index_secid": "1.000300",
+          "ipv4_only": true,
+          "kline": {
+            "fields1": "f1,f2,f3,f4,f5,f6",
+            "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61",
+            "hosts": [
+              "push2his.eastmoney.com",
+              "push2his.eastmoney.com",
+              "push2.eastmoney.com"
+            ],
+            "ut": "fa5fd1943c7b386f172d6893dbfba10b"
+          },
+          "kline_retry": {
+            "attempts": 12,
+            "backoff_seconds": [
+              0.4,
+              0.8,
+              1.5,
+              2.5,
+              4.0,
+              6.0,
+              8.0,
+              10.0,
+              12.0,
+              15.0,
+              18.0,
+              20.0
+            ],
+            "jitter_fraction": 0.3
+          },
+          "kline_url": "https://{host}/api/qt/stock/kline/get",
+          "list_fields": "f12,f13,f14,f2,f3,f8,f9,f20,f21,f23,f26,f100",
+          "list_url": "https://{host}/api/qt/clist/get",
+          "page_size": 100,
+          "polite_delay_seconds": 0.5,
+          "retry": {
+            "attempts": 10,
+            "backoff_seconds": [
+              0.5,
+              1.0,
+              2.0,
+              3.0,
+              5.0,
+              8.0,
+              12.0,
+              18.0,
+              25.0,
+              30.0
+            ],
+            "jitter_fraction": 0.3
+          },
+          "timeout_s": 20,
+          "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AICWF academic research"
+        },
+        "fundamentals": {
+          "fields": [
+            "SECUCODE",
+            "REPORT_DATE",
+            "NOTICE_DATE",
+            "EPSJB",
+            "BPS",
+            "TOTALOPERATEREVE",
+            "PARENTNETPROFIT",
+            "TOTALOPERATEREVETZ",
+            "PARENTNETPROFITTZ",
+            "MLR",
+            "MGJYXJJE"
+          ],
+          "page_size": 60,
+          "report": "RPT_F10_FINANCE_MAINFINADATA"
+        }
       }
     },
     "gates": {
@@ -52,6 +189,7 @@
           "turnover_max_increase": 0.1
         },
         "registry": {
+          "candidate_version": "v1.0.0",
           "releases_dir": "registry/releases",
           "require_git_clean": true,
           "versions_file": "registry/versions.json"
@@ -84,67 +222,219 @@
       }
     },
     "model": {
+      "agent_loop": {
+        "max_read_chars": 12000,
+        "max_retries_invalid_json": 2,
+        "max_tool_rounds": 3,
+        "repair_temperature": 0.0
+      },
       "default": {
-        "backend": "replay",
-        "model": "replay-fixture"
+        "backend": "ollama",
+        "base_url": "http://127.0.0.1:11434",
+        "format_json": true,
+        "keep_alive": "10m",
+        "max_tokens": 1600,
+        "model": "qwen3.5:9b",
+        "num_ctx": 16384,
+        "retry": {
+          "attempts": 3,
+          "backoff_seconds": [
+            0.5,
+            1.0,
+            2.0
+          ]
+        },
+        "temperature": 0.1,
+        "think": false,
+        "timeout_s": 180,
+        "top_p": 0.9
+      },
+      "openai_compat": {
+        "api_key_env": "AICWF_LLM_API_KEY",
+        "base_url": "",
+        "model": "",
+        "retry": {
+          "attempts": 3,
+          "backoff_seconds": [
+            1.0,
+            2.0,
+            4.0
+          ]
+        },
+        "timeout_s": 120,
+        "use_response_format": false
+      },
+      "prompts": {
+        "dir": "prompts",
+        "skill_dir": "skills"
+      },
+      "replay": {
+        "cache_dir": "evidence/llm_cache",
+        "record": false,
+        "strict": true
       }
     },
     "strategy": {
       "backtest": {
         "benchmark": "000300.SH",
+        "board_limits": {
+          "bse": 0.3,
+          "chinext": 0.2,
+          "limit_tolerance": 0.005,
+          "main": 0.1,
+          "st": 0.05,
+          "star": 0.2
+        },
         "constraints": {
+          "benchmark_weight_cap": 0.03,
           "cash_buffer": 0.0,
-          "industry_active_limit": 0.1,
-          "max_active_weight": 0.1,
-          "max_weight": 0.4,
-          "min_names": 4,
+          "industry_active_limit": 0.02,
+          "max_active_weight": 0.015,
+          "max_weight": 0.03,
+          "min_names": 60,
           "te_target": 0.03,
-          "turnover_limit": 1.0
+          "turnover_limit": 0.3,
+          "weight_margin": 0.985
         },
         "costs": {
           "commission_bps": 2.5,
-          "impact_coef": 0.0,
+          "impact_coef": 0.1,
           "min_trade_notional": 10000,
           "slippage_bps": 5.0,
           "stamp_duty_bps": 5.0
         },
-        "end_date": "2024-12-31",
+        "end_date": "2026-11-12",
         "execution": "next_close",
+        "initial_capital": 100000000.0,
+        "lot_size": 100,
         "optimizer": {
-          "max_iter": 50,
-          "method": "reference_grid",
+          "covariance_lookback_days": 120,
+          "lambda_bisection_steps": 24,
+          "lambda_bounds": [
+            1e-06,
+            1000000.0
+          ],
+          "max_iter": 200,
+          "method": "projected_gradient",
+          "risk_model": "ledoit_wolf",
           "tol": 1e-09
         },
         "rebalance": "monthly",
         "signal_lag_days": 1,
-        "start_date": "2022-04-01"
+        "signal_lag_months": 1,
+        "start_date": "2018-01-02"
       },
       "data": {
-        "end_date": "2024-12-31",
+        "benchmark_weights": "free_float_cap_proxy",
+        "end_date": "2026-11-12",
         "frequency": "daily",
         "price_adjustment": "qfq",
-        "snapshot": "tests/fixtures/mini_snapshot",
-        "start_date": "2022-01-04"
-      },
-      "demo": {
-        "amplitude": 0.03,
-        "description": "Monthly rebalance, 15-day reversal signal, 3% active tilt.",
-        "lookback": 15,
-        "rebalance": "monthly",
-        "variant": "baseline"
+        "snapshot": "data/snapshots/2026-11-12",
+        "start_date": "2016-01-04"
       },
       "factors": {
         "catalog": {
+          "growth_profit": {
+            "category": "growth",
+            "description": "net profit year over year",
+            "direction": 1.0
+          },
+          "growth_revenue": {
+            "category": "growth",
+            "description": "revenue year over year",
+            "direction": 1.0
+          },
+          "lottery_max_20d": {
+            "category": "risk",
+            "description": "max daily return over 20 days",
+            "direction": -1.0
+          },
+          "low_vol_60d": {
+            "category": "risk",
+            "description": "60 day realized volatility",
+            "direction": -1.0
+          },
+          "momentum_12_1": {
+            "category": "momentum",
+            "description": "12-1 month return",
+            "direction": 1.0
+          },
+          "quality_cashflow": {
+            "category": "quality",
+            "description": "operating cash flow per share / EPS",
+            "direction": 1.0
+          },
+          "quality_gross_margin": {
+            "category": "quality",
+            "description": "gross profit / revenue",
+            "direction": 1.0
+          },
+          "quality_roe": {
+            "category": "quality",
+            "description": "EPS / BPS",
+            "direction": 1.0
+          },
           "reversal_1m": {
             "category": "momentum",
-            "description": "short-horizon reversal",
+            "description": "one month reversal",
             "direction": -1.0
+          },
+          "turnover_20d": {
+            "category": "liquidity",
+            "description": "20 day turnover",
+            "direction": -1.0
+          },
+          "value_bp": {
+            "category": "value",
+            "description": "book value per share / price",
+            "direction": 1.0
+          },
+          "value_ep": {
+            "category": "value",
+            "description": "trailing EPS / price",
+            "direction": 1.0
+          },
+          "value_spp": {
+            "category": "value",
+            "description": "revenue per share / price",
+            "direction": 1.0
           }
         },
         "composite": {
           "default_weights": {
-            "reversal_1m": 1.0
+            "growth_profit": 0.05,
+            "growth_revenue": 0.05,
+            "lottery_max_20d": 0.0,
+            "low_vol_60d": 0.05,
+            "momentum_12_1": 0.15,
+            "quality_cashflow": 0.05,
+            "quality_gross_margin": 0.05,
+            "quality_roe": 0.15,
+            "reversal_1m": 0.05,
+            "turnover_20d": 0.0,
+            "value_bp": 0.15,
+            "value_ep": 0.2,
+            "value_spp": 0.05
           }
+        },
+        "ic_min_names": 5,
+        "min_cross_section": 100,
+        "neutralize": [
+          "industry",
+          "log_size"
+        ],
+        "neutralize_min_obs": 5,
+        "windows": {
+          "short_days": 20,
+          "vol_days": 60
+        },
+        "winsorize": {
+          "lower": 0.01,
+          "method": "quantile",
+          "upper": 0.99
+        },
+        "zscore": {
+          "method": "rank"
         }
       },
       "monitoring": {
@@ -155,30 +445,379 @@
         "te_alert": 0.08,
         "te_stop_multiple": 2.0
       },
+      "portfolio": {
+        "benchmark_weight_cap": 0.03,
+        "constraints_bounds": {
+          "max_active_weight": [
+            0.001,
+            0.015
+          ],
+          "max_weight": [
+            0.005,
+            0.03
+          ],
+          "te_target": [
+            0.01,
+            0.03
+          ],
+          "turnover_limit": [
+            0.05,
+            0.6
+          ]
+        },
+        "covariance": {
+          "annualization": 252,
+          "eigen_floor": 1e-10,
+          "fallback": "diagonal",
+          "lookback_days": 120,
+          "method": "ledoit_wolf",
+          "min_obs": 20
+        },
+        "defaults": {
+          "max_active_weight": 0.015,
+          "max_weight": 0.03,
+          "te_target": 0.03,
+          "turnover_limit": 0.3
+        },
+        "fallback": {
+          "enabled": true,
+          "min_names": 3
+        },
+        "lot_size": 100,
+        "optimizer": {
+          "lambda_bisection_steps": 24,
+          "lambda_bounds": [
+            1e-06,
+            1000000.0
+          ],
+          "max_iter": 200,
+          "method": "projected_gradient",
+          "tol": 1e-09,
+          "warm_start": true
+        },
+        "participation_cap": 0.1
+      },
+      "robustness": {
+        "bias_stress_drop_top_k": 30,
+        "bias_stress_levels": [
+          0.5,
+          1.0
+        ],
+        "cost_multipliers": [
+          0.0,
+          1.0,
+          3.0
+        ],
+        "dsr_trials": 24,
+        "factor_leave_one_out": true,
+        "max_loo_factors": 13,
+        "parameter_grid": {
+          "rebalance": [
+            "monthly",
+            "quarterly"
+          ],
+          "te_target": [
+            0.03,
+            0.05,
+            0.07
+          ]
+        },
+        "placebo_repetitions": 20,
+        "subperiods": [
+          [
+            "2018-01-02",
+            "2020-12-31"
+          ],
+          [
+            "2021-01-04",
+            "2023-12-29"
+          ],
+          [
+            "2024-01-02",
+            "2026-11-12"
+          ]
+        ],
+        "thresholds": {
+          "bias_stress_excess_min": 0.0,
+          "cost_3x_excess_min": 0.0,
+          "dsr_min": 0.95,
+          "grid_positive_share": 0.6,
+          "loo_min_information_ratio": 0.0,
+          "placebo_p_value_max": 0.1,
+          "subperiod_pass_share": 0.66
+        }
+      },
       "universe": {
         "exclude_st": true,
+        "exclude_suspended": true,
         "index_code": "000300",
-        "index_name": "CSI 300 (mini fixture)",
-        "min_listed_days": 0
+        "index_name": "CSI 300",
+        "min_listed_days": 250,
+        "min_price_coverage": 0.9
       }
     },
     "workflow": {
-      "name": "index_enhancement_research",
-      "version": "1.0.0"
+      "workflow": {
+        "description": "Monthly multi-factor CSI 300 index-enhancement research: hypothesis, data preparation, factor construction, backtest, robustness, portfolio construction, independent verification, research note, human approval and version registry.",
+        "execution": {
+          "mode": "deterministic_topological",
+          "stop_on_first_failure": true
+        },
+        "name": "index_enhancement_research",
+        "stages": [
+          {
+            "handler": "intake",
+            "name": "intake",
+            "needs": [],
+            "produces": [
+              "run_request.json"
+            ],
+            "retries": 0,
+            "timeout_s": 60
+          },
+          {
+            "agent": {
+              "max_tokens": 1800,
+              "prompt": "prompts/researcher.md",
+              "role": "researcher",
+              "schema": "aicwf/schemas/hypothesis.schema.json",
+              "skill": "skills/hypothesis_spec/SKILL.md"
+            },
+            "handler": "hypothesis",
+            "name": "hypothesis",
+            "needs": [
+              "intake"
+            ],
+            "produces": [
+              "hypothesis.json",
+              "rationale.md"
+            ],
+            "retries": 2,
+            "timeout_s": 420
+          },
+          {
+            "handler": "data_prep",
+            "name": "data_prep",
+            "needs": [
+              "intake"
+            ],
+            "produces": [
+              "panel.parquet",
+              "benchmark.parquet",
+              "data_quality.json",
+              "pit_audit.json"
+            ],
+            "retries": 1,
+            "timeout_s": 600
+          },
+          {
+            "handler": "factor_build",
+            "name": "factor_build",
+            "needs": [
+              "hypothesis",
+              "data_prep"
+            ],
+            "produces": [
+              "factor_panel.parquet",
+              "factor_report.json"
+            ],
+            "retries": 1,
+            "timeout_s": 300
+          },
+          {
+            "agent": {
+              "max_tokens": 1400,
+              "prompt": "prompts/factor_analyst.md",
+              "role": "factor_analyst",
+              "schema": "aicwf/schemas/factor_flags.schema.json",
+              "skill": "skills/factor_diagnostics/SKILL.md"
+            },
+            "handler": "factor_review",
+            "name": "factor_review",
+            "needs": [
+              "factor_build"
+            ],
+            "produces": [
+              "assessment.md",
+              "flags.json"
+            ],
+            "retries": 2,
+            "timeout_s": 420
+          },
+          {
+            "handler": "backtest",
+            "name": "backtest",
+            "needs": [
+              "hypothesis",
+              "factor_build"
+            ],
+            "produces": [
+              "ledger.parquet",
+              "holdings.parquet",
+              "metrics.json",
+              "equity_curve.csv"
+            ],
+            "retries": 0,
+            "timeout_s": 600
+          },
+          {
+            "handler": "robustness",
+            "name": "robustness",
+            "needs": [
+              "backtest"
+            ],
+            "produces": [
+              "robustness.json",
+              "robustness_checks.json"
+            ],
+            "retries": 0,
+            "timeout_s": 900
+          },
+          {
+            "agent": {
+              "max_tokens": 1600,
+              "prompt": "prompts/risk_critic.md",
+              "role": "risk_critic",
+              "schema": null,
+              "skill": "skills/risk_review/SKILL.md"
+            },
+            "handler": "robustness_review",
+            "name": "robustness_review",
+            "needs": [
+              "backtest",
+              "robustness"
+            ],
+            "produces": [
+              "critique.md"
+            ],
+            "retries": 2,
+            "timeout_s": 420
+          },
+          {
+            "handler": "portfolio",
+            "name": "portfolio",
+            "needs": [
+              "factor_build",
+              "backtest"
+            ],
+            "produces": [
+              "target_weights.parquet",
+              "orders.csv",
+              "risk_report.json"
+            ],
+            "retries": 0,
+            "timeout_s": 300
+          },
+          {
+            "agent": {
+              "max_tokens": 1200,
+              "prompt": "prompts/verifier.md",
+              "role": "verifier",
+              "schema": "aicwf/schemas/verification.schema.json",
+              "skill": "skills/pit_and_cutoff/SKILL.md"
+            },
+            "handler": "verification",
+            "name": "verification",
+            "needs": [
+              "data_prep",
+              "backtest",
+              "robustness",
+              "portfolio"
+            ],
+            "produces": [
+              "verification.json",
+              "verifier_note.md"
+            ],
+            "retries": 0,
+            "timeout_s": 420
+          },
+          {
+            "agent": {
+              "max_tokens": 2200,
+              "prompt": "prompts/report_writer.md",
+              "role": "report_writer",
+              "schema": null,
+              "skill": "skills/report_template/SKILL.md"
+            },
+            "handler": "report",
+            "name": "report",
+            "needs": [
+              "verification",
+              "backtest",
+              "robustness",
+              "portfolio"
+            ],
+            "produces": [
+              "research_note.md",
+              "metrics_table.md",
+              "charts"
+            ],
+            "retries": 2,
+            "timeout_s": 600
+          },
+          {
+            "approval_action": "publish_report",
+            "handler": "approval",
+            "human_gate": true,
+            "name": "approval",
+            "needs": [
+              "report"
+            ],
+            "produces": [
+              "approval.json"
+            ],
+            "retries": 0,
+            "timeout_s": 60
+          },
+          {
+            "approval_action": "promote_version",
+            "handler": "registry",
+            "human_gate": true,
+            "name": "registry",
+            "needs": [
+              "approval"
+            ],
+            "produces": [
+              "version_entry.json"
+            ],
+            "retries": 0,
+            "timeout_s": 120
+          }
+        ],
+        "triggers": {
+          "monthly": {
+            "command": "python -m aicwf monitor --as-of <latest-trading-day>",
+            "cron": "0 18 1 * *",
+            "note": "Installed through scripts/scheduled_monitor.ps1 (Windows Task Scheduler) or cron. The controller also accepts --trigger new-data, which compares the latest snapshot hash with the last monitor run.",
+            "timezone": "Asia/Shanghai"
+          },
+          "new_data": {
+            "mode": "hash_change",
+            "watch": "data/snapshots/*/manifest.json"
+          }
+        },
+        "version": "1.0.0"
+      }
     }
   },
-  "created_at_utc": "2025-01-01T00:00:00+00:00",
-  "data_scope": "mini_fixture",
-  "evidence_mode": "fixture",
+  "created_at_utc": "2026-11-13T03:59:55+00:00",
+  "data_scope": "real_csi300",
+  "evidence_mode": "real",
   "frozen": {
-    "as_of": "2024-12-31",
-    "config_hash": "17f877d54c68609dd404607cefbf5450b94994fe0cfe970e5c5787fa189551c5",
+    "as_of": "2026-11-12",
+    "config_hash": "1eb68852b0852d7ea40333acb4c54a9faa442492c651ae669dba13041dfb3b78",
     "initial_capital": 100000000.0,
-    "llm_mode": "replay",
-    "prompt_hashes": {},
-    "run_id": "demo-baseline-2024-12-31",
+    "llm_mode": "ollama",
+    "prompt_hashes": {
+      "factor_analyst.md": "416942709fc3253de9903e7cba377607962fb1a1b03e48bafa4a831cbce55088",
+      "report_writer.md": "bcbd1f1c94cc12d651482a38af5ecd23a38970d4bd46c717e820f6e400e5e98f",
+      "researcher.md": "44471b5b00f027a8757919e44227bc1752ddd4cdc74e30dba8f0823c40afef1d",
+      "risk_critic.md": "e858d463bcc7d0f676b6c36a0d4baaa9e53a44655fc9847ac00fe5e425df89a9",
+      "verifier.md": "7c5027318d0dbdc0bf864cc55070aa6d8a6f542934abbb6d2b81745d3505951a"
+    },
+    "run_id": "final-2026-11-12",
     "seed": 0,
-    "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
+    "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
     "workflow_version": "1.0.0"
   },
   "hard_gates": [
@@ -188,45 +827,47 @@
     "budget_within_limit"
   ],
   "headline_metrics": {
-    "annualized_excess_return": 0.229174302886324,
-    "annualized_return": 0.2074978583049607,
-    "annualized_volatility": 0.11963773415787071,
-    "benchmark_cumulative_return": -0.06558219899368978,
-    "cumulative_return": 0.7924944069,
-    "information_ratio": 1.0530839865112542,
-    "max_drawdown": -0.09834219590148863,
-    "sharpe": 1.7343847220572746,
-    "tracking_error": 0.21762205657076986,
-    "turnover": 2.608201417461555
+    "annualized_excess_return": 0.159403963,
+    "annualized_return": 0.1536436321,
+    "annualized_volatility": 0.1730117514,
+    "benchmark_cumulative_return": -0.0475689713,
+    "cumulative_return": 2.3393978517,
+    "information_ratio": 2.5870761559,
+    "max_drawdown": -0.2353496409,
+    "sharpe": 0.8880531574,
+    "tracking_error": 0.0616154892
   },
   "metrics": {
-    "annualized_excess_return": 0.229174302886324,
-    "annualized_return": 0.2074978583049607,
-    "annualized_volatility": 0.11963773415787071,
-    "benchmark_cumulative_return": -0.06558219899368978,
-    "cumulative_return": 0.7924944069,
-    "end_date": "2024-12-31",
-    "excess_cumulative_return": 0.9183007911124919,
-    "information_ratio": 1.0530839865112542,
+    "annualized_excess_return": 0.159403963,
+    "annualized_return": 0.1536436321,
+    "annualized_volatility": 0.1730117514,
+    "benchmark_annualized_return": -0.005760331,
+    "benchmark_annualized_volatility": 0.1938632019,
+    "benchmark_cumulative_return": -0.0475689713,
+    "benchmark_max_drawdown": -0.4560261955,
+    "benchmark_sharpe": -0.0297133799,
+    "cumulative_return": 2.3393978517,
+    "end_date": "2026-11-12",
+    "excess_cumulative_return": 2.5061833886,
+    "information_ratio": 2.5870761559,
     "initial_capital": 100000000.0,
-    "max_drawdown": -0.09834219590148863,
-    "n_days": 781,
-    "n_returns": 780,
-    "rebalance_count": 35,
-    "sharpe": 1.7343847220572746,
-    "start_date": "2022-01-04",
-    "tracking_error": 0.21762205657076986,
-    "turnover": 2.608201417461555
+    "max_drawdown": -0.2353496409,
+    "n_days": 2127,
+    "n_holdings_average": 279.7264150943,
+    "n_returns": 2126,
+    "rebalance_count": 106,
+    "sharpe": 0.8880531574,
+    "start_date": "2018-02-01",
+    "te_estimate_average": 0.017728488,
+    "tracking_error": 0.0616154892,
+    "turnover_annualized": 1.6462709417,
+    "turnover_average": 0.1371892451
   },
-  "notes": [
-    "Fixture-backed placeholder baseline built on tests/fixtures/mini_snapshot.",
-    "Replace with the real-data baseline after integration:",
-    "python -m aicwf.eval --baseline-refresh --run outputs/runs/<real_run_id> --data-scope real_csi300 --evidence-mode real"
-  ],
+  "notes": [],
   "schema_version": "1.0.0",
   "source": {
-    "metrics_artifact_hash": "4be6f497a33cc6921c1a185ab45f20bd48c31b9295f8a0e475207cceb6f0bd68",
-    "run_dir": "eval/runs/baseline_v1.0.0/run"
+    "metrics_artifact_hash": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+    "run_dir": "outputs/runs/final-2026-11-12"
   },
   "status": "active",
   "tolerances": {

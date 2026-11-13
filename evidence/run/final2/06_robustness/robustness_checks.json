@@ -1,0 +1,51 @@
+[
+  {
+    "name": "subperiod_consistency",
+    "status": "pass",
+    "value": 1.0,
+    "threshold": 0.66,
+    "detail": "3/3 subperiods have positive annualized excess return"
+  },
+  {
+    "name": "cost_sensitivity_3x",
+    "status": "pass",
+    "value": 0.1511640452,
+    "threshold": 0.0,
+    "detail": "annualized excess return with 3x transaction costs is 0.1512"
+  },
+  {
+    "name": "leave_one_out",
+    "status": "pass",
+    "value": 2.5115617909,
+    "threshold": 0.0,
+    "detail": "worst leave-one-factor-out information ratio is 2.5116 over 4 variants"
+  },
+  {
+    "name": "parameter_grid_stability",
+    "status": "pass",
+    "value": 1.0,
+    "threshold": 0.6,
+    "detail": "6/6 parameter combinations keep a positive annualized excess return"
+  },
+  {
+    "name": "placebo_significance",
+    "status": "fail",
+    "value": 1.0,
+    "threshold": 0.1,
+    "detail": "seeded random-score placebo p-value is 1.0000 over 20 repetitions"
+  },
+  {
+    "name": "survivorship_bias_stress",
+    "status": "pass",
+    "value": 0.1249316139,
+    "threshold": 0.0,
+    "detail": "annualized excess return after removing the top full-period index winners (k=30) is 0.1249"
+  },
+  {
+    "name": "deflated_sharpe",
+    "status": "pass",
+    "value": 0.9563966492,
+    "threshold": 0.95,
+    "detail": "deflated Sharpe ratio 0.9564 with 38 trials and 2126 observations"
+  }
+]

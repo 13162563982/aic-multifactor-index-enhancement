@@ -1,0 +1,447 @@
+{
+  "artifacts": [
+    {
+      "content_hash": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3",
+      "logical_name": "equity_curve",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/equity_curve.csv",
+      "size_bytes": 221929,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3",
+      "logical_name": "equity_curve.csv",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/equity_curve.csv",
+      "size_bytes": 221929,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e",
+      "logical_name": "holdings",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/holdings.parquet",
+      "size_bytes": 766475,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e",
+      "logical_name": "holdings.parquet",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/holdings.parquet",
+      "size_bytes": 766475,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+      "logical_name": "ledger",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/ledger.parquet",
+      "size_bytes": 1136244,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+      "logical_name": "ledger.parquet",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/ledger.parquet",
+      "size_bytes": 1136244,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+      "logical_name": "metrics",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/metrics.json",
+      "size_bytes": 38521,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+      "logical_name": "metrics.json",
+      "relpath": "outputs/runs/resume-demo-2/05_backtest/metrics.json",
+      "size_bytes": 38521,
+      "stage": "backtest"
+    },
+    {
+      "content_hash": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+      "logical_name": "benchmark",
+      "relpath": "outputs/runs/resume-demo-2/02_data/benchmark.parquet",
+      "size_bytes": 61059,
+      "stage": "data_prep"
+    },
+    {
+      "content_hash": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+      "logical_name": "data_quality",
+      "relpath": "outputs/runs/resume-demo-2/02_data/data_quality.json",
+      "size_bytes": 2376,
+      "stage": "data_prep"
+    },
+    {
+      "content_hash": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+      "logical_name": "panel",
+      "relpath": "outputs/runs/resume-demo-2/02_data/panel.parquet",
+      "size_bytes": 22584126,
+      "stage": "data_prep"
+    },
+    {
+      "content_hash": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+      "logical_name": "pit_audit",
+      "relpath": "outputs/runs/resume-demo-2/02_data/pit_audit.json",
+      "size_bytes": 1290,
+      "stage": "data_prep"
+    },
+    {
+      "content_hash": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+      "logical_name": "factor_panel",
+      "relpath": "outputs/runs/resume-demo-2/03_factors/factor_panel.parquet",
+      "size_bytes": 7167964,
+      "stage": "factor_build"
+    },
+    {
+      "content_hash": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+      "logical_name": "factor_panel.parquet",
+      "relpath": "outputs/runs/resume-demo-2/03_factors/factor_panel.parquet",
+      "size_bytes": 7167964,
+      "stage": "factor_build"
+    },
+    {
+      "content_hash": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549",
+      "logical_name": "factor_report",
+      "relpath": "outputs/runs/resume-demo-2/03_factors/factor_report.json",
+      "size_bytes": 70447,
+      "stage": "factor_build"
+    },
+    {
+      "content_hash": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549",
+      "logical_name": "factor_report.json",
+      "relpath": "outputs/runs/resume-demo-2/03_factors/factor_report.json",
+      "size_bytes": 70447,
+      "stage": "factor_build"
+    },
+    {
+      "content_hash": "df33a6f90da798cee30a1fde8f35d721d140179270a8a1873fbd5c6c117a66bd",
+      "logical_name": "assessment",
+      "relpath": "outputs/runs/resume-demo-2/04_factor_review/assessment.md",
+      "size_bytes": 3792,
+      "stage": "factor_review"
+    },
+    {
+      "content_hash": "0139a0f2fcc63adb6fb1af6b9f74a8330c11792ddf62cf60e96d14dd17609b57",
+      "logical_name": "flags",
+      "relpath": "outputs/runs/resume-demo-2/04_factor_review/flags.json",
+      "size_bytes": 4824,
+      "stage": "factor_review"
+    },
+    {
+      "content_hash": "3d509353a878b4d88e4b008ea95a9d1368b851ede723e82a489ddbac0e72d211",
+      "logical_name": "hypothesis",
+      "relpath": "outputs/runs/resume-demo-2/01_hypothesis/hypothesis.json",
+      "size_bytes": 2119,
+      "stage": "hypothesis"
+    },
+    {
+      "content_hash": "4ef039534936d6d5dc7c8599cf2a001db52496bb82a81684ddd030f3ba02416a",
+      "logical_name": "rationale",
+      "relpath": "outputs/runs/resume-demo-2/01_hypothesis/rationale.md",
+      "size_bytes": 2615,
+      "stage": "hypothesis"
+    },
+    {
+      "content_hash": "579f06f82f7e4fa37ded2fc944047f3f37753e7637191555872bf3c4e68860db",
+      "logical_name": "run_request",
+      "relpath": "outputs/runs/resume-demo-2/00_intake/run_request.json",
+      "size_bytes": 1846,
+      "stage": "intake"
+    },
+    {
+      "content_hash": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a",
+      "logical_name": "orders",
+      "relpath": "outputs/runs/resume-demo-2/08_portfolio/orders.csv",
+      "size_bytes": 14160,
+      "stage": "portfolio"
+    },
+    {
+      "content_hash": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a",
+      "logical_name": "orders.csv",
+      "relpath": "outputs/runs/resume-demo-2/08_portfolio/orders.csv",
+      "size_bytes": 14160,
+      "stage": "portfolio"
+    },
+    {
+      "content_hash": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab",
+      "logical_name": "risk_report",
+      "relpath": "outputs/runs/resume-demo-2/08_portfolio/risk_report.json",
+      "size_bytes": 4699,
+      "stage": "portfolio"
+    },
+    {
+      "content_hash": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab",
+      "logical_name": "risk_report.json",
+      "relpath": "outputs/runs/resume-demo-2/08_portfolio/risk_report.json",
+      "size_bytes": 4699,
+      "stage": "portfolio"
+    },
+    {
+      "content_hash": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+      "logical_name": "target_weights",
+      "relpath": "outputs/runs/resume-demo-2/08_portfolio/target_weights.parquet",
+      "size_bytes": 14979,
+      "stage": "portfolio"
+    },
+    {
+      "content_hash": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+      "logical_name": "target_weights.parquet",
+      "relpath": "outputs/runs/resume-demo-2/08_portfolio/target_weights.parquet",
+      "size_bytes": 14979,
+      "stage": "portfolio"
+    },
+    {
+      "content_hash": "bd437dd4db38d1e6a498dd6a5e428e79d18dba9c92c7689061b36689238e347c",
+      "logical_name": "chart_cumulative_excess",
+      "relpath": "outputs/runs/resume-demo-2/10_report/charts/cumulative_excess.png",
+      "size_bytes": 31645,
+      "stage": "report"
+    },
+    {
+      "content_hash": "bfdc4530b437240b266ec0489197757302ed9a53b2a5f9cd20d46a16de4f055f",
+      "logical_name": "chart_drawdown",
+      "relpath": "outputs/runs/resume-demo-2/10_report/charts/drawdown.png",
+      "size_bytes": 61714,
+      "stage": "report"
+    },
+    {
+      "content_hash": "66b06fcc6f813746284d66fdcba1f28db7000a0b9b730411f93ea29b23d72a5e",
+      "logical_name": "chart_exposures",
+      "relpath": "outputs/runs/resume-demo-2/10_report/charts/exposures.png",
+      "size_bytes": 59807,
+      "stage": "report"
+    },
+    {
+      "content_hash": "b53200f8ec702246a0e641f3371e35888f6d329f305abd4bdd57c854657b64c1",
+      "logical_name": "chart_factor_ic",
+      "relpath": "outputs/runs/resume-demo-2/10_report/charts/factor_ic.png",
+      "size_bytes": 37849,
+      "stage": "report"
+    },
+    {
+      "content_hash": "3b029b320afd629ba991a400088e910f074ed5c5b4897ac891cd25396853984f",
+      "logical_name": "metrics_table",
+      "relpath": "outputs/runs/resume-demo-2/10_report/metrics_table.md",
+      "size_bytes": 1311,
+      "stage": "report"
+    },
+    {
+      "content_hash": "5d7452c47390b1bda98d496cb8dd8f9d2729e91862fad814697a2459f8d45a1a",
+      "logical_name": "research_note",
+      "relpath": "outputs/runs/resume-demo-2/10_report/research_note.md",
+      "size_bytes": 6243,
+      "stage": "report"
+    },
+    {
+      "content_hash": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a",
+      "logical_name": "robustness",
+      "relpath": "outputs/runs/resume-demo-2/06_robustness/robustness.json",
+      "size_bytes": 15811,
+      "stage": "robustness"
+    },
+    {
+      "content_hash": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a",
+      "logical_name": "robustness.json",
+      "relpath": "outputs/runs/resume-demo-2/06_robustness/robustness.json",
+      "size_bytes": 15811,
+      "stage": "robustness"
+    },
+    {
+      "content_hash": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a",
+      "logical_name": "robustness_checks",
+      "relpath": "outputs/runs/resume-demo-2/06_robustness/robustness_checks.json",
+      "size_bytes": 1375,
+      "stage": "robustness"
+    },
+    {
+      "content_hash": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a",
+      "logical_name": "robustness_checks.json",
+      "relpath": "outputs/runs/resume-demo-2/06_robustness/robustness_checks.json",
+      "size_bytes": 1375,
+      "stage": "robustness"
+    },
+    {
+      "content_hash": "b2cfae79b9baaf56f5d6e81e962f040a9e68af4dedcc5d279d15b9c1bdf05da8",
+      "logical_name": "critique",
+      "relpath": "outputs/runs/resume-demo-2/07_robustness_review/critique.md",
+      "size_bytes": 2689,
+      "stage": "robustness_review"
+    },
+    {
+      "content_hash": "26799e4c54fd7c064e222569e52f870d95c07f40ad44f5e78b5a2e2cb7251c46",
+      "logical_name": "verification",
+      "relpath": "outputs/runs/resume-demo-2/09_verification/verification.json",
+      "size_bytes": 8343,
+      "stage": "verification"
+    },
+    {
+      "content_hash": "d6ef7e0b0608968edbe672f69f2113eaa3736609e266035014a16736471c71d1",
+      "logical_name": "verifier_note",
+      "relpath": "outputs/runs/resume-demo-2/09_verification/verifier_note.md",
+      "size_bytes": 3641,
+      "stage": "verification"
+    }
+  ],
+  "as_of": "2026-11-12",
+  "budget": {
+    "cost_usd": {
+      "limit": 0.0,
+      "used": 0.0
+    },
+    "llm_calls": {
+      "limit": 40.0,
+      "used": 4.0
+    },
+    "tokens_total": {
+      "limit": 200000.0,
+      "used": 13007.0
+    },
+    "wall_seconds": {
+      "limit": 900.0,
+      "used": 289.46999999999935
+    }
+  },
+  "config_hash": "2aded26925d63b9a353f9251edf715c9d827ddcc9175a0b6926653fdca5ec2f1",
+  "error": null,
+  "llm_mode": "replay",
+  "next_action": "python -m aicwf approve resume-demo-2 --action publish_report",
+  "run_id": "resume-demo-2",
+  "seed": 0,
+  "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+  "status": "awaiting_approval",
+  "steps": [
+    {
+      "attempt": 1,
+      "duration_s": 0.09399999999914144,
+      "error_type": null,
+      "input_hash": "9f6dd20160c4ac7892c4ebdf1b54868c22224f7f9a99af4f27060d61cdf3461a",
+      "last_disposition": "skipped_completed",
+      "output_hash": "fbbf6ed7a8f0492f28440e86d5e0c8cdab0a6b54430c75df29809f45288a5549",
+      "skip_count": 2,
+      "stage": "intake",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 0.01599999999962165,
+      "error_type": null,
+      "input_hash": "da981740a916e38f894dd83ce4ac46254de9dd1b38f09ded2ecbe026ec0ac83a",
+      "last_disposition": "skipped_completed",
+      "output_hash": "aaa849b57305b8fc143eaf033a60d2fe3f2c3a85b82ecafe99e46f40b1c071ef",
+      "skip_count": 2,
+      "stage": "hypothesis",
+      "status": "completed"
+    },
+    {
+      "attempt": 2,
+      "duration_s": 18.46899999999914,
+      "error_type": null,
+      "input_hash": "1f01f924961418575fac22a571ab4a0e708648f824a352fb8be153d9216a2708",
+      "last_disposition": "skipped_completed",
+      "output_hash": "dc90fe857e94576caa739cea84cc1fbca9364598d7d5bc4d74de028094340ee5",
+      "skip_count": 1,
+      "stage": "data_prep",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 17.0,
+      "error_type": null,
+      "input_hash": "4342eb39bb2962834dcde751e9c9f972eb3d0671c4bc7cc507b5805457d76727",
+      "last_disposition": "skipped_completed",
+      "output_hash": "f30df639e10353e1d27a922c0e0a752039d8c4992c2cd4ea4506c39e728f5708",
+      "skip_count": 1,
+      "stage": "factor_build",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 0.031000000000858563,
+      "error_type": null,
+      "input_hash": "746243c6db3ec44df2657ee0304ea215435bbce08762db6a14941ee0b91a3d93",
+      "last_disposition": "skipped_completed",
+      "output_hash": "3f9a701face9fd9d1c33b0491b505656b8074c2a24f3c5dc08ec38a05f3fa03a",
+      "skip_count": 1,
+      "stage": "factor_review",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 8.031999999999243,
+      "error_type": null,
+      "input_hash": "6e6bed916abec747f7dd46ca308db77ae5457d5dcd65c5a5bfcd6b4f9f0d73f5",
+      "last_disposition": "skipped_completed",
+      "output_hash": "5938495c5173b1b9a5376a051c7ea31996d30090cc7f91b916c54681b42765ba",
+      "skip_count": 1,
+      "stage": "backtest",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 128.46800000000076,
+      "error_type": null,
+      "input_hash": "9b89cda402f571e85ab1e32a8c9458e5df8bd3b75216b6e4aa8abbe211237f7a",
+      "last_disposition": "skipped_completed",
+      "output_hash": "6ca50b22faeb8ccd8d02888cb99fb82121c07b6284425a7225ad35ba0bf64a78",
+      "skip_count": 1,
+      "stage": "robustness",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 0.01599999999962165,
+      "error_type": null,
+      "input_hash": "767632d99c484fa05545c30355aea3c7a8ec7d0ba70375f496243f51648623c7",
+      "last_disposition": "skipped_completed",
+      "output_hash": "26729efd8e537a950a7e8035ee00fad7577695ad093cffa50cd949d541549ea7",
+      "skip_count": 1,
+      "stage": "robustness_review",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 6.125,
+      "error_type": null,
+      "input_hash": "743a33137e2b9e72bce31bed9234c61d1b3461a13f723fdfe761aa069a9a9d88",
+      "last_disposition": "skipped_completed",
+      "output_hash": "4bfe465efe6d98ffb01fdae69518bbf9f6bfa623d35165e772dca7ed21128874",
+      "skip_count": 1,
+      "stage": "portfolio",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "duration_s": 45.625,
+      "error_type": null,
+      "input_hash": "ebaf3c830806b5ec4603592d5c8c815d0bab3ff252871aef75256c5e9004d3ac",
+      "last_disposition": "skipped_completed",
+      "output_hash": "c571c1da4bfb5966111201bcb7ad3baee2900b3bfb59a4ad151f29e3cd96305b",
+      "skip_count": 1,
+      "stage": "verification",
+      "status": "completed"
+    },
+    {
+      "attempt": 2,
+      "duration_s": 47.0619999999999,
+      "error_type": null,
+      "input_hash": "afaa965a5cd3783f11430b41a98cc2a656592d5e16b44724bf361913c64f3f1a",
+      "last_disposition": "executed",
+      "output_hash": "5f738bb3f16a21526e04e583d8a6da1febaf2e550a595b1461c1691c5df4079a",
+      "skip_count": 0,
+      "stage": "report",
+      "status": "completed"
+    },
+    {
+      "attempt": 0,
+      "duration_s": 0.0,
+      "error_type": null,
+      "input_hash": null,
+      "last_disposition": "awaiting_approval",
+      "output_hash": null,
+      "skip_count": 0,
+      "stage": "approval",
+      "status": "blocked"
+    }
+  ],
+  "trigger": "",
+  "workflow_version": "1.0.0"
+}

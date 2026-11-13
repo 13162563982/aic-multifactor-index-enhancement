@@ -1,0 +1,225 @@
+universe:
+  index_code: '000300'
+  index_name: CSI 300
+  min_listed_days: 250
+  exclude_st: true
+  exclude_suspended: true
+  min_price_coverage: 0.9
+data:
+  start_date: '2016-01-04'
+  end_date: '2026-11-12'
+  snapshot: data/snapshots/2026-11-12
+  price_adjustment: qfq
+  frequency: daily
+  benchmark_weights: free_float_cap_proxy
+factors:
+  winsorize:
+    lower: 0.01
+    upper: 0.99
+    method: quantile
+  zscore:
+    method: rank
+  neutralize:
+  - industry
+  - log_size
+  min_cross_section: 100
+  neutralize_min_obs: 5
+  ic_min_names: 5
+  windows:
+    vol_days: 60
+    short_days: 20
+  catalog:
+    value_ep:
+      direction: 1.0
+      category: value
+      description: trailing EPS / price
+    value_bp:
+      direction: 1.0
+      category: value
+      description: book value per share / price
+    value_spp:
+      direction: 1.0
+      category: value
+      description: revenue per share / price
+    quality_roe:
+      direction: 1.0
+      category: quality
+      description: EPS / BPS
+    quality_gross_margin:
+      direction: 1.0
+      category: quality
+      description: gross profit / revenue
+    quality_cashflow:
+      direction: 1.0
+      category: quality
+      description: operating cash flow per share / EPS
+    growth_revenue:
+      direction: 1.0
+      category: growth
+      description: revenue year over year
+    growth_profit:
+      direction: 1.0
+      category: growth
+      description: net profit year over year
+    momentum_12_1:
+      direction: 1.0
+      category: momentum
+      description: 12-1 month return
+    reversal_1m:
+      direction: -1.0
+      category: momentum
+      description: one month reversal
+    low_vol_60d:
+      direction: -1.0
+      category: risk
+      description: 60 day realized volatility
+    turnover_20d:
+      direction: -1.0
+      category: liquidity
+      description: 20 day turnover
+    lottery_max_20d:
+      direction: -1.0
+      category: risk
+      description: max daily return over 20 days
+  composite:
+    default_weights:
+      value_ep: 0.2
+      value_bp: 0.15
+      value_spp: 0.05
+      quality_roe: 0.15
+      quality_gross_margin: 0.05
+      quality_cashflow: 0.05
+      growth_revenue: 0.05
+      growth_profit: 0.05
+      momentum_12_1: 0.15
+      reversal_1m: 0.05
+      low_vol_60d: 0.05
+      turnover_20d: 0.0
+      lottery_max_20d: 0.0
+backtest:
+  start_date: '2018-01-02'
+  end_date: '2026-11-12'
+  rebalance: monthly
+  signal_lag_days: 1
+  signal_lag_months: 1
+  execution: next_close
+  benchmark: 000300.SH
+  initial_capital: 100000000.0
+  lot_size: 100
+  board_limits:
+    main: 0.1
+    chinext: 0.2
+    star: 0.2
+    bse: 0.3
+    st: 0.05
+    limit_tolerance: 0.005
+  costs:
+    commission_bps: 2.5
+    stamp_duty_bps: 5.0
+    slippage_bps: 5.0
+    impact_coef: 0.1
+    min_trade_notional: 10000
+  constraints:
+    max_weight: 0.03
+    max_active_weight: 0.015
+    industry_active_limit: 0.02
+    turnover_limit: 0.3
+    te_target: 0.03
+    cash_buffer: 0.0
+    min_names: 60
+    benchmark_weight_cap: 0.03
+    weight_margin: 0.985
+  optimizer:
+    method: projected_gradient
+    lambda_bounds:
+    - 1.0e-06
+    - 1000000.0
+    lambda_bisection_steps: 24
+    max_iter: 200
+    tol: 1.0e-09
+    risk_model: ledoit_wolf
+    covariance_lookback_days: 120
+portfolio:
+  optimizer:
+    method: projected_gradient
+    lambda_bounds:
+    - 1.0e-06
+    - 1000000.0
+    lambda_bisection_steps: 24
+    max_iter: 200
+    tol: 1.0e-09
+    warm_start: true
+  covariance:
+    method: ledoit_wolf
+    lookback_days: 120
+    annualization: 252
+    min_obs: 20
+    eigen_floor: 1.0e-10
+    fallback: diagonal
+  constraints_bounds:
+    max_weight:
+    - 0.005
+    - 0.03
+    max_active_weight:
+    - 0.001
+    - 0.015
+    te_target:
+    - 0.01
+    - 0.03
+    turnover_limit:
+    - 0.05
+    - 0.6
+  defaults:
+    max_weight: 0.03
+    max_active_weight: 0.015
+    te_target: 0.03
+    turnover_limit: 0.3
+  benchmark_weight_cap: 0.03
+  lot_size: 100
+  participation_cap: 0.1
+  fallback:
+    enabled: true
+    min_names: 3
+robustness:
+  subperiods:
+  - - '2018-01-02'
+    - '2020-12-31'
+  - - '2021-01-04'
+    - '2023-12-29'
+  - - '2024-01-02'
+    - '2026-11-12'
+  cost_multipliers:
+  - 0.0
+  - 1.0
+  - 3.0
+  factor_leave_one_out: true
+  max_loo_factors: 13
+  parameter_grid:
+    te_target:
+    - 0.03
+    - 0.05
+    - 0.07
+    rebalance:
+    - monthly
+    - quarterly
+  placebo_repetitions: 20
+  bias_stress_drop_top_k: 30
+  bias_stress_levels:
+  - 0.5
+  - 1.0
+  dsr_trials: 24
+  thresholds:
+    subperiod_pass_share: 0.66
+    cost_3x_excess_min: 0.0
+    loo_min_information_ratio: 0.0
+    grid_positive_share: 0.6
+    placebo_p_value_max: 0.1
+    bias_stress_excess_min: 0.0
+    dsr_min: 0.95
+monitoring:
+  te_alert: 0.08
+  te_stop_multiple: 2.0
+  excess_drawdown_alert: 0.1
+  data_staleness_days: 3
+  min_coverage: 0.9
+  ic_decay_alert: -0.05

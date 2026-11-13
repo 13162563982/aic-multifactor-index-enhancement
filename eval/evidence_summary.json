@@ -1,9 +1,9 @@
 {
   "baseline": {
-    "annualized_excess_return": 0.229174302886324,
+    "annualized_excess_return": 0.23583189034182872,
     "path": "eval\\baseline_v1.0.0.json",
     "snapshot_hash": "e6f49616ad20bfca30a3fb0c00b6560b35d31c93fa4298d651971b50ebe934e7",
-    "tracking_error": 0.21762205657076986
+    "tracking_error": 0.2191658203665517
   },
   "cases": {
     "accepted_v1.1.0": {
@@ -12,11 +12,11 @@
       "expected": "accept",
       "metric_diffs": {
         "annualized_excess_return": {
-          "delta": -0.001049075371829744,
+          "delta": -0.0010822935963197278,
           "status": "pass"
         },
         "information_ratio": {
-          "delta": -0.004427508672814495,
+          "delta": -0.004532203518894606,
           "status": "pass"
         },
         "max_drawdown": {
@@ -24,7 +24,7 @@
           "status": "pass"
         },
         "tracking_error": {
-          "delta": -8.158232059299331e-05,
+          "delta": -8.305047213946759e-05,
           "status": "pass"
         },
         "turnover": {
@@ -39,11 +39,11 @@
       "expected": "reject",
       "metric_diffs": {
         "annualized_excess_return": {
-          "delta": -0.012875627074220963,
+          "delta": -0.014229928001651015,
           "status": "fail"
         },
         "information_ratio": {
-          "delta": -0.06044294528006111,
+          "delta": -0.06480678558470743,
           "status": "pass"
         },
         "max_drawdown": {
@@ -51,7 +51,7 @@
           "status": "pass"
         },
         "tracking_error": {
-          "delta": 0.0002801526143584865,
+          "delta": -2.6201265423103637e-05,
           "status": "pass"
         },
         "turnover": {
@@ -61,16 +61,247 @@
       }
     }
   },
+  "fixture_evidence_note": "eval/cases/* are fixture-backed offline mechanism examples evaluated against eval/baseline_v1.0.0.fixture.json; the active baseline is the real-data eval/baseline_v1.0.0.json.",
+  "monitor_2026_11_12": {
+    "alerts": [
+      {
+        "id": "tracking_error_alert",
+        "message": "realized tracking error 0.0867 exceeds the alert threshold 0.0800",
+        "severity": "warn",
+        "threshold": 0.08,
+        "value": 0.08673778431535946
+      }
+    ],
+    "files": [
+      "monitor_request.json",
+      "performance_update.json",
+      "drift_report.json",
+      "monitoring.json",
+      "monitoring_report.md"
+    ],
+    "monitor_id": "monitor-2026-11-12",
+    "path": "outputs/monitor/monitor-2026-11-12",
+    "run_id": "final-2026-11-12",
+    "verdict": "alert"
+  },
+  "real_baseline": {
+    "baseline_id": "baseline_v1.0.0",
+    "created_at_utc": "2026-11-13T03:59:55+00:00",
+    "data_scope": "real_csi300",
+    "evidence_mode": "real",
+    "frozen": {
+      "as_of": "2026-11-12",
+      "config_hash": "1eb68852b0852d7ea40333acb4c54a9faa442492c651ae669dba13041dfb3b78",
+      "llm_mode": "ollama",
+      "run_id": "final-2026-11-12",
+      "seed": 0,
+      "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8"
+    },
+    "headline_metrics": {
+      "annualized_excess_return": 0.159403963,
+      "annualized_return": 0.1536436321,
+      "information_ratio": 2.5870761559,
+      "max_drawdown": -0.2353496409,
+      "tracking_error": 0.0616154892,
+      "turnover_annualized": 1.6462709417,
+      "turnover_average": 0.1371892451
+    },
+    "path": "eval/baseline_v1.0.0.json",
+    "verification": {
+      "checks_failed": 0,
+      "verdict": "PASS"
+    },
+    "version": "v1.0.0"
+  },
+  "real_change_control": {
+    "accepted_candidate": {
+      "candidate_run": "cand-a-2026-11-12",
+      "case": "eval/cases/real_accepted_v1.1.0",
+      "decision": "accept",
+      "decision_file": "evidence/eval/real_accepted_v1.1.0_decision.json",
+      "hard_gates": {
+        "budget_within_limit": "pass",
+        "deterministic_replay": "pass",
+        "leakage_tests_pass": "pass",
+        "verification_passes": "pass"
+      },
+      "metric_diffs": {
+        "annualized_excess_return": {
+          "baseline": 0.159403963,
+          "candidate": 0.1643591456,
+          "delta": 0.0049551825999999966,
+          "status": "pass",
+          "tolerance": 0.005
+        },
+        "information_ratio": {
+          "baseline": 2.5870761559,
+          "candidate": 2.5340470164,
+          "delta": -0.05302913949999999,
+          "status": "pass",
+          "tolerance": 0.1
+        },
+        "max_drawdown": {
+          "baseline": -0.2353496409,
+          "candidate": -0.2224025419,
+          "delta": 0.01294709899999999,
+          "status": "pass",
+          "tolerance": 0.02
+        },
+        "tracking_error": {
+          "baseline": 0.0616154892,
+          "candidate": 0.0648603379,
+          "delta": 0.003244848699999997,
+          "status": "pass",
+          "tolerance": 0.01
+        },
+        "turnover": {
+          "baseline": 1.6462709417,
+          "candidate": 1.5770462136,
+          "delta": -0.06922472810000002,
+          "status": "pass",
+          "tolerance": 0.1
+        }
+      },
+      "registry_entry": {
+        "config_hash": "7caa49dedbf1f55fcf80e5d6b4b157c367b5da6b938543478ee6d9c2f5ffcbe2",
+        "created_at_utc": "2026-11-13T04:31:00+00:00",
+        "entry_hash": "ff3932a41e1e63206e074d0efe79c2601b6de3af94f7681600196761a5f8dafd",
+        "previous_version": "v1.0.0",
+        "run_id": "cand-a-2026-11-12",
+        "sequence": 2,
+        "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+        "version": "v1.1.0"
+      },
+      "replay_evidence_file": "evidence/eval/real_accepted_v1.1.0_replay_evidence.json",
+      "replay_identical": true,
+      "version": "v1.1.0"
+    },
+    "registry_history": [
+      {
+        "created_at_utc": "2026-11-13T04:18:25+00:00",
+        "decision": "accept",
+        "entry_hash": "42a1dadc14653cc6295d9560ca8b11d0802102e183f9c0c558c0c065488d4a91",
+        "kind": "release",
+        "previous_version": null,
+        "sequence": 1,
+        "version": "v1.0.0"
+      },
+      {
+        "created_at_utc": "2026-11-13T04:31:00+00:00",
+        "decision": "accept",
+        "entry_hash": "ff3932a41e1e63206e074d0efe79c2601b6de3af94f7681600196761a5f8dafd",
+        "kind": "release",
+        "previous_version": "v1.0.0",
+        "sequence": 2,
+        "version": "v1.1.0"
+      },
+      {
+        "created_at_utc": "2026-11-13T04:33:00+00:00",
+        "decision": "rollback",
+        "entry_hash": "e62632993aa0d6d87500dd21819f9e06c2fe90c4cec4300fb6359153b14b749a",
+        "kind": "rollback",
+        "previous_version": "v1.1.0",
+        "sequence": 3,
+        "version": "rollback-v1.0.0"
+      }
+    ],
+    "rejected_candidate": {
+      "candidate_run": "cand-b-2026-11-12 (did not complete)",
+      "case": "rejected_v1.2.0 (fixture)",
+      "decision": "reject",
+      "note_file": "evidence/eval/real_rejected_v1.2.0_note.json",
+      "reason": "live-Qwen factor_review Markdown tripped the reviewer numeric-citation context gap; agent-runtime widened the guard and the rerun progressed (factor_review/backtest passed) but did not reach completion within the submission deadline; fixture rejection record documents the change-control reject path (excess degradation + turnover breach).",
+      "status": "fixture_fallback"
+    },
+    "rollback": {
+      "after_metrics": {
+        "annualized_excess_return": 0.159403963,
+        "information_ratio": 2.5870761559,
+        "max_drawdown": -0.2353496409,
+        "tracking_error": 0.0616154892
+      },
+      "before_metrics": {
+        "annualized_excess_return": 0.1643591456,
+        "information_ratio": 2.5340470164,
+        "max_drawdown": -0.2224025419,
+        "tracking_error": 0.0648603379
+      },
+      "file": "evidence/rollback/rollback_v1.1.0_to_v1.0.0.json",
+      "from_version": "v1.1.0",
+      "history_file": "evidence/rollback/registry_history.json",
+      "registry_entry": {
+        "decision": "rollback",
+        "entry_hash": "e62632993aa0d6d87500dd21819f9e06c2fe90c4cec4300fb6359153b14b749a",
+        "from_version": "v1.1.0",
+        "kind": "rollback",
+        "sequence": 3,
+        "to_version": "v1.0.0",
+        "version": "rollback-v1.0.0"
+      },
+      "restored_files": 16,
+      "smoke_status": "pass",
+      "to_version": "v1.0.0"
+    }
+  },
+  "real_run": {
+    "independent_reverification": {
+      "checks_failed": 0,
+      "command": "python -m aicwf.verify --run-dir outputs/runs/final-2026-11-12",
+      "duration_s": 41.6,
+      "verdict": "PASS"
+    },
+    "run_dir": "outputs/runs/final-2026-11-12",
+    "run_id": "final-2026-11-12",
+    "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+    "status": "completed",
+    "verification": {
+      "checks_failed": 0,
+      "verdict": "PASS"
+    }
+  },
   "registry": {
     "bundle_v1.0.0_intact": true,
     "bundle_v1.1.0_intact": true,
     "dir": "eval\\registry_roundtrip",
     "history": "eval\\registry_roundtrip\\registry\\versions.json",
-    "release_v1.0.0_hash": "fcb39ef5a173538a393b9c4202ca7ff362175ef8799a83e21e064607d3dad9d7",
-    "release_v1.1.0_hash": "b55d64cf8525e862d982ce430202dbc0e534d6e2f839e1c758377350fcbd1d64",
+    "release_v1.0.0_hash": "3492a3a7eaf6ce292579a20352c28a8b3139df48a389141fee8eb7ceaa01172b",
+    "release_v1.1.0_hash": "c7642f4cfedddb6efafa0c81372aa7890d2849c1eaa02a0028c50dcba19a4e95",
     "restored_config_files": 6,
     "restored_variant": "baseline",
-    "rollback_entry_hash": "03a37edb563256789a84b2430ee2ebf216e71eca67f44dedffea5611566678e0",
+    "rollback_entry_hash": "7b9c43c3138a59cda99118f517be1074a56562b78948b6a1b38402857e7a96f7",
     "rollback_smoke": "pass"
+  },
+  "registry_release_v1_0_0": {
+    "bundle": {
+      "bundle_hash": "3116c07a58c327c0b587bc9ea79d0255eafe498557e1b32c6279a8696b7e6930",
+      "config_hash": "2e12ab67f64da85b7f171a4d03deed7c08c730f74e130ed99348be0ce00159ce",
+      "files": 16,
+      "path": "registry/releases/v1.0.0"
+    },
+    "entry": {
+      "approval": {
+        "action": "publish_report",
+        "approval_hash": "ce1d231653247809e295b48de82e77b8f50308693474628750dd0f750438839e",
+        "approver": "Zhengjia Zhu",
+        "decided_at_utc": "2026-11-13T04:00:09+00:00",
+        "decision": "approve",
+        "n_artifact_hashes": 29,
+        "note": "PASS independent verification; promote baseline v1.0.0 (Lead authorization)",
+        "scope": "run"
+      },
+      "config_hash": "1eb68852b0852d7ea40333acb4c54a9faa442492c651ae669dba13041dfb3b78",
+      "created_at_utc": "2026-11-13T04:00:28+00:00",
+      "decision": "accept",
+      "entry_hash": "379d5155ea5a6f46e18ff38622675ea11af67035d92ad226fa6ee7e9e597ccc6",
+      "git_clean": null,
+      "git_commit": null,
+      "kind": "release",
+      "previous_version": null,
+      "sequence": 1,
+      "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+      "verification_verdict": "PASS",
+      "version": "v1.0.0"
+    },
+    "history": "registry/versions.json"
   }
 }

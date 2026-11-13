@@ -348,6 +348,23 @@ def test_check_cited_numbers_is_unit_aware_percent_fraction_and_bp() -> None:
     assert "2.5" in verified
 
 
+def test_nested_artifact_numbers_and_rounding_are_citable() -> None:
+    """Full-artifact allowed context: nested maps + rounding must be accepted."""
+
+    report = {
+        "rank_ic_detail": {"quality_roe": {"mean": 0.007643, "t_stat": 2.4}},
+        "correlation_matrix": {"quality_gross_margin": {"value_spp": 0.63292597}},
+        "warnings": ["coverage 58%"],
+    }
+    allowed = build_allowed_numbers(report)
+    unverified, verified = check_cited_numbers(
+        "The ICs range from 0.0076 to 0.0081, correlation 0.63292597, coverage 58%.",
+        allowed | {Decimal("0.008123")},
+    )
+    assert unverified == []
+    assert len(verified) == 4
+
+
 def test_check_cited_numbers_stays_strict_for_absent_numbers() -> None:
     allowed = {Decimal("0.015")}
     unverified, _ = check_cited_numbers("Invented 1.51 and 42.5 with 0.015.", allowed)

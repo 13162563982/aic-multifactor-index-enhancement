@@ -12,10 +12,10 @@
 | artifact_schema | pass | 18/18 contract artifacts present, parseable and well-formed |
 | artifact_hashes | pass | 18 artifact content hashes computed and match declared hashes |
 | ledger_reconcile | pass | 889 ledger rows reconciled across 153 holdings dates; cash and weights tie out |
-| metrics_recompute | pass | 7 headline metrics and 4 benchmark metrics reproduced independently within relative tolerance 1e-06 (e.g. annualized_excess_return=0.21629867581210327, tracking_error=0.21790220918512834) |
+| metrics_recompute | pass | 7 headline metrics and 4 benchmark metrics reproduced independently within relative tolerance 1e-06 (e.g. annualized_excess_return=0.2216019623401777, tracking_error=0.2191396191011285) |
 | weights_bounds | pass | all weights <= 0.4, \|active\| <= 0.1, no leverage and >= 4 names at every rebalance |
 | industry_neutrality | pass | industry active weights within +/-0.1 at every rebalance (max \|industry active\| 0.060009 on 2022-11-04 in 银行) |
-| forbidden_securities | pass | 889 trades checked against ST/suspended/limit rules (6 universe names, 4576 price-limit observations); 1 warning(s) |
+| forbidden_securities | pass | 889 trades checked against ST/suspended/limit rules (6 universe names, 889 price-limit observations); 1 warning(s) |
 | t1_tradability | pass | 889 trades respect T+1 settlement and the frozen trading calendar (781 days) |
 | pit_prices | pass | all artifact dates <= as_of 2024-12-31; every ledger/holdings price equals the frozen same-date close |
 | pit_fundamentals | pass | pit_audit clean (violations=[], max_panel_date=2024-12-31) and no fundamental row available after as_of 2024-12-31 was usable; 1 warning(s) |
@@ -25,13 +25,13 @@
 
 | metric | recomputed |
 |---|---|
-| annualized_return | 0.19462223123073996 |
-| annualized_volatility | 0.1201507694501841 |
-| sharpe | 1.619816769558289 |
+| annualized_return | 0.19994710867847965 |
+| annualized_volatility | 0.1215476073238854 |
+| sharpe | 1.6450106512231435 |
 | max_drawdown | -0.09868661149877178 |
-| annualized_excess_return | 0.21629867581210327 |
-| tracking_error | 0.21790220918512834 |
-| information_ratio | 0.9926410412311941 |
+| annualized_excess_return | 0.2216019623401777 |
+| tracking_error | 0.2191396191011285 |
+| information_ratio | 1.0112364128821127 |
 
 ## Benchmark
 

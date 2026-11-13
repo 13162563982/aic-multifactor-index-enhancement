@@ -1,4 +1,4 @@
-﻿# Curated example run
+# Curated example run
 
 This directory mirrors the small, reviewable artifacts of the verified run `final2-2026-11-12` (frozen snapshot 8ab22713..., information cutoff 2026-11-12). Large parquet files are included only where they are small enough to review (target weights); the full ledger, holdings, panel and factor panel remain in the run directory described in `docs/evidence_index.md`.
 

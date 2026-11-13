@@ -1,0 +1,16 @@
+{
+  "as_of": "2026-11-12",
+  "llm_mode": "replay",
+  "monitor_id": "monitor-2026-11-12",
+  "previous_run_id": "final2-2026-11-12",
+  "previous_snapshot_hash": null,
+  "run_id": "final2-2026-11-12",
+  "schema_version": "1.0.0",
+  "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+  "trigger": {
+    "new_data": false,
+    "previous_snapshot_hash": null,
+    "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+    "type": "scheduled"
+  }
+}

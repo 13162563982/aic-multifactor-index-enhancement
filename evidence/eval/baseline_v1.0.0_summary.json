@@ -1,0 +1,44 @@
+{
+  "baseline_id": "baseline_v1.0.0",
+  "data_scope": "real_csi300",
+  "evidence_mode": "real",
+  "frozen": {
+    "as_of": "2026-11-12",
+    "config_hash": "1eb68852b0852d7ea40333acb4c54a9faa442492c651ae669dba13041dfb3b78",
+    "initial_capital": 100000000.0,
+    "llm_mode": "ollama",
+    "prompt_hashes": {
+      "factor_analyst.md": "416942709fc3253de9903e7cba377607962fb1a1b03e48bafa4a831cbce55088",
+      "report_writer.md": "bcbd1f1c94cc12d651482a38af5ecd23a38970d4bd46c717e820f6e400e5e98f",
+      "researcher.md": "44471b5b00f027a8757919e44227bc1752ddd4cdc74e30dba8f0823c40afef1d",
+      "risk_critic.md": "e858d463bcc7d0f676b6c36a0d4baaa9e53a44655fc9847ac00fe5e425df89a9",
+      "verifier.md": "7c5027318d0dbdc0bf864cc55070aa6d8a6f542934abbb6d2b81745d3505951a"
+    },
+    "run_id": "final-2026-11-12",
+    "seed": 0,
+    "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+    "workflow_version": "1.0.0"
+  },
+  "hard_gates": [
+    "leakage_tests_pass",
+    "verification_passes",
+    "deterministic_replay",
+    "budget_within_limit"
+  ],
+  "metrics": {
+    "annualized_excess_return": 0.159403963,
+    "annualized_return": 0.1536436321,
+    "annualized_volatility": 0.1730117514,
+    "information_ratio": 2.5870761559,
+    "max_drawdown": -0.2353496409,
+    "sharpe": 0.8880531574,
+    "tracking_error": 0.0616154892,
+    "turnover_annualized": 1.6462709417,
+    "turnover_average": 0.1371892451
+  },
+  "verification": {
+    "checks_failed": 0,
+    "verdict": "PASS"
+  },
+  "version": "v1.0.0"
+}

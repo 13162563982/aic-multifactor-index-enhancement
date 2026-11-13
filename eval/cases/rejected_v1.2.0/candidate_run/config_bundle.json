@@ -39,6 +39,7 @@
         "turnover_max_increase": 0.1
       },
       "registry": {
+        "candidate_version": "v1.1.0",
         "releases_dir": "registry/releases",
         "require_git_clean": true,
         "versions_file": "registry/versions.json"

@@ -1,23 +1,23 @@
 {
   "bias_stress": {
-    "annualized_excess_return": 0.1710939206358707,
+    "annualized_excess_return": 0.17606219755913174,
     "drop_top_k": 2
   },
   "cost_sensitivity": [
     {
-      "annualized_excess_return": 0.23562522751449427,
+      "annualized_excess_return": 0.242249596745509,
       "multiplier": 0.0
     },
     {
-      "annualized_excess_return": 0.22812522751449427,
+      "annualized_excess_return": 0.234749596745509,
       "multiplier": 1.0
     },
     {
-      "annualized_excess_return": 0.21312522751449425,
+      "annualized_excess_return": 0.21974959674550898,
       "multiplier": 3.0
     }
   ],
-  "deflated_sharpe": 1.705350158064031,
+  "deflated_sharpe": 1.712386601575127,
   "leave_one_out": [
     {
       "annualized_excess_return": 0.0,
@@ -26,17 +26,17 @@
   ],
   "parameter_grid": [
     {
-      "annualized_excess_return": 0.22812522751449427,
+      "annualized_excess_return": 0.234749596745509,
       "rebalance": "monthly",
       "te_target": 0.03
     },
     {
-      "annualized_excess_return": 0.29656279576884254,
+      "annualized_excess_return": 0.3051744757691617,
       "rebalance": "monthly",
       "te_target": 0.05
     },
     {
-      "annualized_excess_return": 0.15968765926014597,
+      "annualized_excess_return": 0.16432471772185628,
       "rebalance": "quarterly",
       "te_target": 0.03
     }
@@ -48,22 +48,22 @@
   },
   "subperiods": [
     {
-      "annualized_excess_return": 0.18250018201159543,
-      "end": "2023-07-03",
-      "portfolio_return": 0.2325243762,
-      "start": "2022-01-04"
+      "annualized_excess_return": 0.1877996773964072,
+      "end": "2023-07-17",
+      "portfolio_return": 0.298732341233116,
+      "start": "2022-02-01"
     },
     {
-      "annualized_excess_return": 0.27375027301739313,
+      "annualized_excess_return": 0.2816995160946108,
       "end": "2024-12-31",
-      "portfolio_return": 0.4504204120583788,
-      "start": "2023-07-04"
+      "portfolio_return": 0.37750700392884995,
+      "start": "2023-07-18"
     }
   ],
   "summary": {
     "concerns": [],
-    "n_observations": 781,
+    "n_observations": 761,
     "pass": true,
-    "tracking_error": 0.21754047425017686
+    "tracking_error": 0.21908276989441222
   }
 }

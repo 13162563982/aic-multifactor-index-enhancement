@@ -1,0 +1,597 @@
+{
+  "artifacts": [
+    {
+      "final2_identical": false,
+      "hashes": {
+        "final2-2026-11-12": "22861311f35e82f3e293d55d41dedfc46677c38d940803d1c8ca07e4e2100a40",
+        "replay-final-a": null,
+        "replay-final-b": null
+      },
+      "logical_name": "approval",
+      "replays_identical": true,
+      "stage": "approval"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3",
+        "replay-final-a": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3",
+        "replay-final-b": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3"
+      },
+      "logical_name": "equity_curve",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3",
+        "replay-final-a": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3",
+        "replay-final-b": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3"
+      },
+      "logical_name": "equity_curve.csv",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e",
+        "replay-final-a": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e",
+        "replay-final-b": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e"
+      },
+      "logical_name": "holdings",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e",
+        "replay-final-a": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e",
+        "replay-final-b": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e"
+      },
+      "logical_name": "holdings.parquet",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+        "replay-final-a": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+        "replay-final-b": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3"
+      },
+      "logical_name": "ledger",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+        "replay-final-a": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+        "replay-final-b": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3"
+      },
+      "logical_name": "ledger.parquet",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+        "replay-final-a": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+        "replay-final-b": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4"
+      },
+      "logical_name": "metrics",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+        "replay-final-a": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+        "replay-final-b": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4"
+      },
+      "logical_name": "metrics.json",
+      "replays_identical": true,
+      "stage": "backtest"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+        "replay-final-a": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+        "replay-final-b": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8"
+      },
+      "logical_name": "benchmark",
+      "replays_identical": true,
+      "stage": "data_prep"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+        "replay-final-a": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+        "replay-final-b": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e"
+      },
+      "logical_name": "data_quality",
+      "replays_identical": true,
+      "stage": "data_prep"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+        "replay-final-a": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+        "replay-final-b": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172"
+      },
+      "logical_name": "panel",
+      "replays_identical": true,
+      "stage": "data_prep"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+        "replay-final-a": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+        "replay-final-b": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1"
+      },
+      "logical_name": "pit_audit",
+      "replays_identical": true,
+      "stage": "data_prep"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+        "replay-final-a": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+        "replay-final-b": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5"
+      },
+      "logical_name": "factor_panel",
+      "replays_identical": true,
+      "stage": "factor_build"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+        "replay-final-a": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+        "replay-final-b": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5"
+      },
+      "logical_name": "factor_panel.parquet",
+      "replays_identical": true,
+      "stage": "factor_build"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549",
+        "replay-final-a": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549",
+        "replay-final-b": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549"
+      },
+      "logical_name": "factor_report",
+      "replays_identical": true,
+      "stage": "factor_build"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549",
+        "replay-final-a": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549",
+        "replay-final-b": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549"
+      },
+      "logical_name": "factor_report.json",
+      "replays_identical": true,
+      "stage": "factor_build"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "df33a6f90da798cee30a1fde8f35d721d140179270a8a1873fbd5c6c117a66bd",
+        "replay-final-a": "df33a6f90da798cee30a1fde8f35d721d140179270a8a1873fbd5c6c117a66bd",
+        "replay-final-b": "df33a6f90da798cee30a1fde8f35d721d140179270a8a1873fbd5c6c117a66bd"
+      },
+      "logical_name": "assessment",
+      "replays_identical": true,
+      "stage": "factor_review"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "0139a0f2fcc63adb6fb1af6b9f74a8330c11792ddf62cf60e96d14dd17609b57",
+        "replay-final-a": "0139a0f2fcc63adb6fb1af6b9f74a8330c11792ddf62cf60e96d14dd17609b57",
+        "replay-final-b": "0139a0f2fcc63adb6fb1af6b9f74a8330c11792ddf62cf60e96d14dd17609b57"
+      },
+      "logical_name": "flags",
+      "replays_identical": true,
+      "stage": "factor_review"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "3d509353a878b4d88e4b008ea95a9d1368b851ede723e82a489ddbac0e72d211",
+        "replay-final-a": "3d509353a878b4d88e4b008ea95a9d1368b851ede723e82a489ddbac0e72d211",
+        "replay-final-b": "3d509353a878b4d88e4b008ea95a9d1368b851ede723e82a489ddbac0e72d211"
+      },
+      "logical_name": "hypothesis",
+      "replays_identical": true,
+      "stage": "hypothesis"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "4ef039534936d6d5dc7c8599cf2a001db52496bb82a81684ddd030f3ba02416a",
+        "replay-final-a": "4ef039534936d6d5dc7c8599cf2a001db52496bb82a81684ddd030f3ba02416a",
+        "replay-final-b": "4ef039534936d6d5dc7c8599cf2a001db52496bb82a81684ddd030f3ba02416a"
+      },
+      "logical_name": "rationale",
+      "replays_identical": true,
+      "stage": "hypothesis"
+    },
+    {
+      "final2_identical": false,
+      "hashes": {
+        "final2-2026-11-12": "1d112782f1598c43d98d6909e9ccc7a23752548d7c1812712b5e4e80ac3e85d9",
+        "replay-final-a": "4dad8f9e3020a02e8fcc3a1de9e49e81b859e2630aafe405656638d6699a2c88",
+        "replay-final-b": "b1fb43489ce3129fa9eb792da116290d3ebd9ec2f42dd7439a8cb77a81273e52"
+      },
+      "logical_name": "run_request",
+      "replays_identical": false,
+      "stage": "intake"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a",
+        "replay-final-a": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a",
+        "replay-final-b": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a"
+      },
+      "logical_name": "orders",
+      "replays_identical": true,
+      "stage": "portfolio"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a",
+        "replay-final-a": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a",
+        "replay-final-b": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a"
+      },
+      "logical_name": "orders.csv",
+      "replays_identical": true,
+      "stage": "portfolio"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab",
+        "replay-final-a": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab",
+        "replay-final-b": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab"
+      },
+      "logical_name": "risk_report",
+      "replays_identical": true,
+      "stage": "portfolio"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab",
+        "replay-final-a": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab",
+        "replay-final-b": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab"
+      },
+      "logical_name": "risk_report.json",
+      "replays_identical": true,
+      "stage": "portfolio"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+        "replay-final-a": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+        "replay-final-b": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988"
+      },
+      "logical_name": "target_weights",
+      "replays_identical": true,
+      "stage": "portfolio"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+        "replay-final-a": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988",
+        "replay-final-b": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988"
+      },
+      "logical_name": "target_weights.parquet",
+      "replays_identical": true,
+      "stage": "portfolio"
+    },
+    {
+      "final2_identical": false,
+      "hashes": {
+        "final2-2026-11-12": "ba764e2542f55c00a6a5d5d464df887af137c0c0fa72e4de07060b28863222a8",
+        "replay-final-a": null,
+        "replay-final-b": null
+      },
+      "logical_name": "version_entry",
+      "replays_identical": true,
+      "stage": "registry"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "bd437dd4db38d1e6a498dd6a5e428e79d18dba9c92c7689061b36689238e347c",
+        "replay-final-a": "bd437dd4db38d1e6a498dd6a5e428e79d18dba9c92c7689061b36689238e347c",
+        "replay-final-b": "bd437dd4db38d1e6a498dd6a5e428e79d18dba9c92c7689061b36689238e347c"
+      },
+      "logical_name": "chart_cumulative_excess",
+      "replays_identical": true,
+      "stage": "report"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "bfdc4530b437240b266ec0489197757302ed9a53b2a5f9cd20d46a16de4f055f",
+        "replay-final-a": "bfdc4530b437240b266ec0489197757302ed9a53b2a5f9cd20d46a16de4f055f",
+        "replay-final-b": "bfdc4530b437240b266ec0489197757302ed9a53b2a5f9cd20d46a16de4f055f"
+      },
+      "logical_name": "chart_drawdown",
+      "replays_identical": true,
+      "stage": "report"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "66b06fcc6f813746284d66fdcba1f28db7000a0b9b730411f93ea29b23d72a5e",
+        "replay-final-a": "66b06fcc6f813746284d66fdcba1f28db7000a0b9b730411f93ea29b23d72a5e",
+        "replay-final-b": "66b06fcc6f813746284d66fdcba1f28db7000a0b9b730411f93ea29b23d72a5e"
+      },
+      "logical_name": "chart_exposures",
+      "replays_identical": true,
+      "stage": "report"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "b53200f8ec702246a0e641f3371e35888f6d329f305abd4bdd57c854657b64c1",
+        "replay-final-a": "b53200f8ec702246a0e641f3371e35888f6d329f305abd4bdd57c854657b64c1",
+        "replay-final-b": "b53200f8ec702246a0e641f3371e35888f6d329f305abd4bdd57c854657b64c1"
+      },
+      "logical_name": "chart_factor_ic",
+      "replays_identical": true,
+      "stage": "report"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "3b029b320afd629ba991a400088e910f074ed5c5b4897ac891cd25396853984f",
+        "replay-final-a": "3b029b320afd629ba991a400088e910f074ed5c5b4897ac891cd25396853984f",
+        "replay-final-b": "3b029b320afd629ba991a400088e910f074ed5c5b4897ac891cd25396853984f"
+      },
+      "logical_name": "metrics_table",
+      "replays_identical": true,
+      "stage": "report"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "8e6b8e0e58c947a08e8f736475849f9ec0b26729669e5243df502033915989c5",
+        "replay-final-a": "8e6b8e0e58c947a08e8f736475849f9ec0b26729669e5243df502033915989c5",
+        "replay-final-b": "8e6b8e0e58c947a08e8f736475849f9ec0b26729669e5243df502033915989c5"
+      },
+      "logical_name": "research_note",
+      "replays_identical": true,
+      "stage": "report"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a",
+        "replay-final-a": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a",
+        "replay-final-b": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a"
+      },
+      "logical_name": "robustness",
+      "replays_identical": true,
+      "stage": "robustness"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a",
+        "replay-final-a": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a",
+        "replay-final-b": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a"
+      },
+      "logical_name": "robustness.json",
+      "replays_identical": true,
+      "stage": "robustness"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a",
+        "replay-final-a": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a",
+        "replay-final-b": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a"
+      },
+      "logical_name": "robustness_checks",
+      "replays_identical": true,
+      "stage": "robustness"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a",
+        "replay-final-a": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a",
+        "replay-final-b": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a"
+      },
+      "logical_name": "robustness_checks.json",
+      "replays_identical": true,
+      "stage": "robustness"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "b2cfae79b9baaf56f5d6e81e962f040a9e68af4dedcc5d279d15b9c1bdf05da8",
+        "replay-final-a": "b2cfae79b9baaf56f5d6e81e962f040a9e68af4dedcc5d279d15b9c1bdf05da8",
+        "replay-final-b": "b2cfae79b9baaf56f5d6e81e962f040a9e68af4dedcc5d279d15b9c1bdf05da8"
+      },
+      "logical_name": "critique",
+      "replays_identical": true,
+      "stage": "robustness_review"
+    },
+    {
+      "final2_identical": false,
+      "hashes": {
+        "final2-2026-11-12": "8730a675681f2bea955357a6eba72d807fdc6a2162b5dd114d552ebfcff7fe08",
+        "replay-final-a": "07a3710f64c4f4e085bb48b48f0466dce52f770acac748e8e97bef6549aabe78",
+        "replay-final-b": "dcac952a4e84db6319f7d7fade9b12204cf594cb02a8c43da58ae3667d9a95f6"
+      },
+      "logical_name": "verification",
+      "replays_identical": false,
+      "stage": "verification"
+    },
+    {
+      "final2_identical": true,
+      "hashes": {
+        "final2-2026-11-12": "6a15bacdd9fb49683504cb0759ed0452a9f4605079e6c652bc7c4d0b661c6aa0",
+        "replay-final-a": "6a15bacdd9fb49683504cb0759ed0452a9f4605079e6c652bc7c4d0b661c6aa0",
+        "replay-final-b": "6a15bacdd9fb49683504cb0759ed0452a9f4605079e6c652bc7c4d0b661c6aa0"
+      },
+      "logical_name": "verifier_note",
+      "replays_identical": true,
+      "stage": "verification"
+    }
+  ],
+  "budget": {
+    "final2-2026-11-12": {
+      "cost_usd": {
+        "limit": 0.0,
+        "used": 0.0
+      },
+      "llm_calls": {
+        "limit": 40.0,
+        "used": 9.0
+      },
+      "tokens_total": {
+        "limit": 200000.0,
+        "used": 0.0
+      },
+      "wall_seconds": {
+        "limit": 900.0,
+        "used": 472.6710000000003
+      }
+    },
+    "replay-final-a": {
+      "cost_usd": {
+        "limit": 0.0,
+        "used": 0.0
+      },
+      "llm_calls": {
+        "limit": 40.0,
+        "used": 5.0
+      },
+      "tokens_total": {
+        "limit": 200000.0,
+        "used": 43261.0
+      },
+      "wall_seconds": {
+        "limit": 900.0,
+        "used": 201.10900000000038
+      }
+    },
+    "replay-final-b": {
+      "cost_usd": {
+        "limit": 0.0,
+        "used": 0.0
+      },
+      "llm_calls": {
+        "limit": 40.0,
+        "used": 5.0
+      },
+      "tokens_total": {
+        "limit": 200000.0,
+        "used": 43261.0
+      },
+      "wall_seconds": {
+        "limit": 900.0,
+        "used": 198.29700000000048
+      }
+    }
+  },
+  "description": "Content-hash comparison for the strict replay verification. final2-2026-11-12 is the recorded run (approved, v1.0.0); replay-final-a and replay-final-b are fresh strict-replay runs with isolated state DBs. Diffs are expected only for run-scoped artifacts.",
+  "expected_run_scoped_differences": [
+    [
+      "intake",
+      "run_request"
+    ],
+    [
+      "verification",
+      "verification"
+    ],
+    [
+      "approval",
+      "approval"
+    ],
+    [
+      "registry",
+      "version_entry"
+    ]
+  ],
+  "identical_artifacts": [
+    "backtest/equity_curve",
+    "backtest/equity_curve.csv",
+    "backtest/holdings",
+    "backtest/holdings.parquet",
+    "backtest/ledger",
+    "backtest/ledger.parquet",
+    "backtest/metrics",
+    "backtest/metrics.json",
+    "data_prep/benchmark",
+    "data_prep/data_quality",
+    "data_prep/panel",
+    "data_prep/pit_audit",
+    "factor_build/factor_panel",
+    "factor_build/factor_panel.parquet",
+    "factor_build/factor_report",
+    "factor_build/factor_report.json",
+    "factor_review/assessment",
+    "factor_review/flags",
+    "hypothesis/hypothesis",
+    "hypothesis/rationale",
+    "portfolio/orders",
+    "portfolio/orders.csv",
+    "portfolio/risk_report",
+    "portfolio/risk_report.json",
+    "portfolio/target_weights",
+    "portfolio/target_weights.parquet",
+    "report/chart_cumulative_excess",
+    "report/chart_drawdown",
+    "report/chart_exposures",
+    "report/chart_factor_ic",
+    "report/metrics_table",
+    "report/research_note",
+    "robustness/robustness",
+    "robustness/robustness.json",
+    "robustness/robustness_checks",
+    "robustness/robustness_checks.json",
+    "robustness_review/critique",
+    "verification/verifier_note"
+  ],
+  "n_artifacts": {
+    "final2-2026-11-12": 42,
+    "replay-final-a": 40,
+    "replay-final-b": 40
+  },
+  "n_identical_replay_a_vs_b_and_final2": 38,
+  "runs": [
+    "final2-2026-11-12",
+    "replay-final-a",
+    "replay-final-b"
+  ],
+  "status": {
+    "final2-2026-11-12": "completed",
+    "replay-final-a": "awaiting_approval",
+    "replay-final-b": "awaiting_approval"
+  }
+}

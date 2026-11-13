@@ -1,0 +1,277 @@
+{
+  "baseline": {
+    "_path": "eval/baseline_v1.0.0.json",
+    "baseline_id": "baseline_v1.0.0",
+    "data_scope": "real_csi300",
+    "evidence_mode": "real",
+    "frozen": {
+      "as_of": "2026-11-12",
+      "config_hash": "1eb68852b0852d7ea40333acb4c54a9faa442492c651ae669dba13041dfb3b78",
+      "initial_capital": 100000000.0,
+      "llm_mode": "ollama",
+      "prompt_hashes": {
+        "factor_analyst.md": "416942709fc3253de9903e7cba377607962fb1a1b03e48bafa4a831cbce55088",
+        "report_writer.md": "bcbd1f1c94cc12d651482a38af5ecd23a38970d4bd46c717e820f6e400e5e98f",
+        "researcher.md": "44471b5b00f027a8757919e44227bc1752ddd4cdc74e30dba8f0823c40afef1d",
+        "risk_critic.md": "e858d463bcc7d0f676b6c36a0d4baaa9e53a44655fc9847ac00fe5e425df89a9",
+        "verifier.md": "7c5027318d0dbdc0bf864cc55070aa6d8a6f542934abbb6d2b81745d3505951a"
+      },
+      "run_id": "final-2026-11-12",
+      "seed": 0,
+      "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+      "workflow_version": "1.0.0"
+    },
+    "metrics": {
+      "annualized_excess_return": 0.159403963,
+      "annualized_return": 0.1536436321,
+      "annualized_volatility": 0.1730117514,
+      "benchmark_annualized_return": -0.005760331,
+      "benchmark_annualized_volatility": 0.1938632019,
+      "benchmark_cumulative_return": -0.0475689713,
+      "benchmark_max_drawdown": -0.4560261955,
+      "benchmark_sharpe": -0.0297133799,
+      "cumulative_return": 2.3393978517,
+      "excess_cumulative_return": 2.5061833886,
+      "information_ratio": 2.5870761559,
+      "initial_capital": 100000000.0,
+      "max_drawdown": -0.2353496409,
+      "n_days": 2127,
+      "n_holdings_average": 279.7264150943,
+      "n_returns": 2126,
+      "rebalance_count": 106,
+      "sharpe": 0.8880531574,
+      "te_estimate_average": 0.017728488,
+      "tracking_error": 0.0616154892,
+      "turnover_annualized": 1.6462709417,
+      "turnover_average": 0.1371892451
+    },
+    "version": "v1.0.0"
+  },
+  "candidate": {
+    "as_of": "2026-11-12",
+    "config_hash": "7caa49dedbf1f55fcf80e5d6b4b157c367b5da6b938543478ee6d9c2f5ffcbe2",
+    "config_overrides": {},
+    "llm_mode": "ollama",
+    "metrics": {
+      "annualized_excess_return": 0.1643591456,
+      "annualized_return": 0.1585988147,
+      "annualized_volatility": 0.1717348505,
+      "benchmark_annualized_return": -0.005760331,
+      "benchmark_annualized_volatility": 0.1938632019,
+      "benchmark_cumulative_return": -0.0475689713,
+      "benchmark_max_drawdown": -0.4560261955,
+      "benchmark_sharpe": -0.0297133799,
+      "cumulative_return": 2.4623577182,
+      "end_date": "2026-11-12",
+      "excess_cumulative_return": 2.6352844603,
+      "information_ratio": 2.5340470164,
+      "initial_capital": 100000000.0,
+      "max_drawdown": -0.2224025419,
+      "n_days": 2127,
+      "n_holdings_average": 279.7264150943,
+      "n_returns": 2126,
+      "rebalance_count": 106,
+      "sharpe": 0.9235097839,
+      "start_date": "2018-02-01",
+      "te_estimate_average": 0.0180989478,
+      "tracking_error": 0.0648603379,
+      "turnover_annualized": 1.5770462136,
+      "turnover_average": 0.1314205178
+    },
+    "prompt_dir": "C:/Users/Jack/AppData/Local/Temp/aicwf_evidence/accepted_prompts",
+    "prompt_hashes": {
+      "factor_analyst.md": "416942709fc3253de9903e7cba377607962fb1a1b03e48bafa4a831cbce55088",
+      "report_writer.md": "3c41a27f7365d12ee77198a861eaf7bbd355b2ea6e23fcd77d243557d0d05094",
+      "researcher.md": "44471b5b00f027a8757919e44227bc1752ddd4cdc74e30dba8f0823c40afef1d",
+      "risk_critic.md": "e858d463bcc7d0f676b6c36a0d4baaa9e53a44655fc9847ac00fe5e425df89a9",
+      "verifier.md": "7c5027318d0dbdc0bf864cc55070aa6d8a6f542934abbb6d2b81745d3505951a"
+    },
+    "run_dir": "outputs/runs/cand-a-2026-11-12",
+    "run_id": "cand-a-2026-11-12",
+    "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+    "verification_verdict": "PASS",
+    "version": null
+  },
+  "case_id": "real_accepted_v1.1.0",
+  "config_changes": [],
+  "created_at_utc": "2026-11-13T04:30:00+00:00",
+  "decision": "accept",
+  "decision_id": "eval-real_accepted_v1.1.0-cand-a-2026-11-12",
+  "evidence": {
+    "baseline_path": "eval/baseline_v1.0.0.json",
+    "candidate_run_dir": "outputs/runs/cand-a-2026-11-12",
+    "case_dir": null,
+    "hard_gate_overrides": {}
+  },
+  "hard_gates": [
+    {
+      "detail": "pit_audit clean and verification PIT checks pass",
+      "id": "leakage_tests_pass",
+      "status": "pass"
+    },
+    {
+      "detail": "verification verdict PASS",
+      "evidence": {
+        "failed_checks": [],
+        "verdict": "PASS"
+      },
+      "id": "verification_passes",
+      "status": "pass"
+    },
+    {
+      "detail": "two independent builds produced identical content hashes for 13 artifacts",
+      "evidence": {
+        "n_artifacts": 13
+      },
+      "id": "deterministic_replay",
+      "status": "pass"
+    },
+    {
+      "detail": "run completed within budget",
+      "evidence": {
+        "llm_calls": null,
+        "llm_tokens": null
+      },
+      "id": "budget_within_limit",
+      "status": "pass"
+    }
+  ],
+  "info_metric_diffs": [
+    {
+      "baseline": 0.1536436321,
+      "candidate": 0.1585988147,
+      "delta": 0.0049551825999999966,
+      "detail": "annualized_return: candidate 0.1585988147 vs baseline 0.1536436321 (context only)",
+      "metric": "annualized_return",
+      "status": "info"
+    },
+    {
+      "baseline": 0.1730117514,
+      "candidate": 0.1717348505,
+      "delta": -0.0012769008999999887,
+      "detail": "annualized_volatility: candidate 0.1717348505 vs baseline 0.1730117514 (context only)",
+      "metric": "annualized_volatility",
+      "status": "info"
+    },
+    {
+      "baseline": 0.8880531574,
+      "candidate": 0.9235097839,
+      "delta": 0.03545662650000003,
+      "detail": "sharpe: candidate 0.9235097839 vs baseline 0.8880531574 (context only)",
+      "metric": "sharpe",
+      "status": "info"
+    },
+    {
+      "baseline": 2.3393978517,
+      "candidate": 2.4623577182,
+      "delta": 0.12295986650000001,
+      "detail": "cumulative_return: candidate 2.4623577182 vs baseline 2.3393978517 (context only)",
+      "metric": "cumulative_return",
+      "status": "info"
+    },
+    {
+      "baseline": -0.0475689713,
+      "candidate": -0.0475689713,
+      "delta": 0.0,
+      "detail": "benchmark_cumulative_return: candidate -0.0475689713 vs baseline -0.0475689713 (context only)",
+      "metric": "benchmark_cumulative_return",
+      "status": "info"
+    }
+  ],
+  "metric_diffs": [
+    {
+      "baseline": 0.159403963,
+      "candidate": 0.1643591456,
+      "delta": 0.0049551825999999966,
+      "detail": "annualized_excess_return: candidate 0.164359 vs baseline 0.159404 (delta +0.004955, max allowed degradation 0.005)",
+      "direction": "higher_better",
+      "metric": "annualized_excess_return",
+      "status": "pass",
+      "tolerance": 0.005,
+      "tolerance_key": "annualized_excess_return_max_degradation"
+    },
+    {
+      "baseline": 2.5870761559,
+      "candidate": 2.5340470164,
+      "delta": -0.05302913949999999,
+      "detail": "information_ratio: candidate 2.53405 vs baseline 2.58708 (delta -0.05303, max allowed degradation 0.1)",
+      "direction": "higher_better",
+      "metric": "information_ratio",
+      "status": "pass",
+      "tolerance": 0.1,
+      "tolerance_key": "information_ratio_max_degradation"
+    },
+    {
+      "baseline": 0.0616154892,
+      "candidate": 0.0648603379,
+      "delta": 0.003244848699999997,
+      "detail": "tracking_error: candidate 0.0648603 vs baseline 0.0616155 (|delta| 0.003245 <= tolerance 0.01)",
+      "direction": "absolute",
+      "metric": "tracking_error",
+      "status": "pass",
+      "tolerance": 0.01,
+      "tolerance_key": "tracking_error_abs_tolerance"
+    },
+    {
+      "baseline": -0.2353496409,
+      "candidate": -0.2224025419,
+      "delta": 0.01294709899999999,
+      "detail": "max_drawdown: candidate -0.222403 vs baseline -0.23535 (delta +0.01295, max allowed degradation 0.02)",
+      "direction": "higher_better",
+      "metric": "max_drawdown",
+      "status": "pass",
+      "tolerance": 0.02,
+      "tolerance_key": "max_drawdown_max_degradation"
+    },
+    {
+      "baseline": 1.6462709417,
+      "candidate": 1.5770462136,
+      "delta": -0.06922472810000002,
+      "detail": "turnover: candidate 1.57705 vs baseline 1.64627 (delta -0.06922, max allowed increase 0.1)",
+      "direction": "lower_better",
+      "metric": "turnover",
+      "status": "pass",
+      "tolerance": 0.1,
+      "tolerance_key": "turnover_max_increase"
+    }
+  ],
+  "rationale": "Candidate cand-a-2026-11-12 (unversioned) was ACCEPTED against baseline_v1.0.0 (v1.0.0). 4 hard gates: 4 passed, 0 failed. 5 change-control metrics evaluated: 0 failed. Reasons: all 4 hard gates passed and 5 change-control metric(s) stayed within the baseline tolerances",
+  "reasons": [
+    "all 4 hard gates passed and 5 change-control metric(s) stayed within the baseline tolerances"
+  ],
+  "schema_version": "1.0.0",
+  "tolerances": {
+    "annualized_excess_return_max_degradation": 0.005,
+    "information_ratio_max_degradation": 0.1,
+    "max_drawdown_max_degradation": 0.02,
+    "tolerance_semantics": {
+      "annualized_excess_return": {
+        "description": "annualized excess return may not degrade by more than this",
+        "direction": "higher_better",
+        "tolerance": "annualized_excess_return_max_degradation"
+      },
+      "information_ratio": {
+        "description": "information ratio may not degrade by more than this",
+        "direction": "higher_better",
+        "tolerance": "information_ratio_max_degradation"
+      },
+      "max_drawdown": {
+        "description": "max drawdown (negative) may not degrade by more than this",
+        "direction": "higher_better",
+        "tolerance": "max_drawdown_max_degradation"
+      },
+      "tracking_error": {
+        "description": "tracking error must stay within this absolute band",
+        "direction": "absolute",
+        "tolerance": "tracking_error_abs_tolerance"
+      },
+      "turnover": {
+        "description": "turnover may not increase by more than this",
+        "direction": "lower_better",
+        "tolerance": "turnover_max_increase"
+      }
+    },
+    "tracking_error_abs_tolerance": 0.01,
+    "turnover_max_increase": 0.1
+  }
+}

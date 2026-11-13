@@ -577,4 +577,22 @@ tables and charts), and the full audit trail — event log, state export, approv
 verification table, registry entry and monitor reports — is under `evidence/`. The evidence map
 with exact paths is `docs/evidence_index.md`.
 
+Change control was exercised on the same real data: a candidate (v1.1.0) that changed only the
+report-writer disclosure prompt was accepted against the frozen v1.0.0 baseline (4/4 hard gates,
+5/5 metric tolerances, deterministic replay of 13/13 numeric artifacts), promoted, and then
+rolled back to v1.0.0 with a bundle restore, a smoke evaluation and before/after metrics. The
+append-only registry history is `v1.0.0 → v1.1.0 → rollback-v1.0.0`
+(`registry/versions.json`, chain valid, both bundles intact). The rejection path is demonstrated
+with the committed 5x-cost fixture case; the real-data candidate B did not complete because the
+reviewer citation guard rejected rounded nested numbers, and that limitation is stated in
+`eval/README.md` rather than hidden.
+
+Two independent replay runs with fresh run ids reproduced 38 of 42 declared artifacts exactly
+(including every numeric artifact, the verifier note and the research note). The four differences
+are run-scoped by construction (run request embeds the run id, verification embeds run id plus
+the run-request hash, and approval/registry artifacts exist only after the gate). Every agent
+stage in both replays was a pure cache hit (`cached_calls == calls`, zero live model calls). The
+comparison table is `evidence/reproducibility/replay_artifact_hashes.json` and the provenance
+note is `replay_note.md`.
+
 

@@ -1,6 +1,6 @@
 {
   "artifact_hashes": {
-    "00_intake/run_request.json": "45bfe2e7699ea236bdaea3baf001aba505896feb3fbf0e31c0243776782b78ef",
+    "00_intake/run_request.json": "c28c0b09e2e81e3c8d5de613b8ef077767157b3a8682dfd69fd6db823af7afef",
     "01_hypothesis/hypothesis.json": "05acbee7989c3fc244f26c81348433c5fc9d06d613cc31b5ec99cb4fb33153d7",
     "01_hypothesis/rationale.md": "20942546118b58b0e866cdbed92e4a8ceef17400654be46669cb4805efe9b22d",
     "02_data/benchmark.parquet": "09c29fbd2d8cdeec8913b69674e3b6d97a55abe31141f8df6d117cf8095100ec",
@@ -9,12 +9,12 @@
     "02_data/pit_audit.json": "3be19037503d02fa5ad1f0019d9d3dccf3264781267453a6532b0d0e96754b2a",
     "03_factors/factor_panel.parquet": "2523f1832c22afdbdd169db64d55075f3c8c1a9cb0e7acdbcdd9e619bcbba86f",
     "03_factors/factor_report.json": "1d3b338216ebdb761bd69592ef3eef103b5243e5d1fea874d81cea643a405f73",
-    "05_backtest/equity_curve.csv": "205803730376a4de3f564ed8de1e1cf08a918a75bd9e7145fd0484629bbedb7a",
+    "05_backtest/equity_curve.csv": "6159b9218be1be7313ec52ad172625f76ff09cad2c19971d01eaca12d1101490",
     "05_backtest/holdings.parquet": "cfca14a39ed2474705a9b86daead343999524c589d786232a15c8498e4ff69b0",
     "05_backtest/ledger.parquet": "307c98b19a0d9688bae01bb4176f074f648440b50b6ac71242a7caa7d222e604",
-    "05_backtest/metrics.json": "e11cda4d6b863f205d929adc4a37257eb758a510e2e8abb4f5881c1218a4aa80",
-    "06_robustness/robustness.json": "326060fc75c4cbff3cf987d68bbe83753dc0cfc377cc8e8b8ff7ab6a0da9c7af",
-    "06_robustness/robustness_checks.json": "06b2d35468f4ca8493927ba498f2eb375db1579ee3abdeeba0299ed398f322d1",
+    "05_backtest/metrics.json": "1d00b3a2eb067b44cbfabe3ff21dac6e433b125855ffb3cf77655ed3253e6124",
+    "06_robustness/robustness.json": "99b386151226466945ef3951fbc64cd8f5d11134da768aa62b7963163009e3d6",
+    "06_robustness/robustness_checks.json": "1d6d119c968ccdf4b36c2e095d821cf8038fb314902484c0b7eba160c33677d5",
     "08_portfolio/orders.csv": "d2d59322c40c69c59452423770bdee03974a79e9b1efc9e4e168940ea6b7c8de",
     "08_portfolio/risk_report.json": "19eeea3146616b5fc42a9571931b5dff81335e3ab1295dc426e03fc729db11d1",
     "08_portfolio/target_weights.parquet": "ac1a0b6ebb8d78ad10eac4aee1ec5bdc587614b76abefcd240dc60b5f1106315"
@@ -36,7 +36,7 @@
     {
       "detail": "206 ledger rows reconciled across 35 holdings dates; cash and weights tie out",
       "details": {
-        "equity_curve_rows": 781,
+        "equity_curve_rows": 761,
         "holdings_dates": 35,
         "initial_capital": 100000000.0,
         "max_abs_cash_fraction": 0.004755687855813065,
@@ -58,7 +58,7 @@
         "tracking_error",
         "information_ratio"
       ],
-      "detail": "7 headline metrics and 4 benchmark metrics reproduced independently within relative tolerance 1e-06 (e.g. annualized_excess_return=0.22812522751449427, tracking_error=0.2175404742501767)",
+      "detail": "7 headline metrics and 4 benchmark metrics reproduced independently within relative tolerance 1e-06 (e.g. annualized_excess_return=0.23474959674550921, tracking_error=0.21908276989441214)",
       "id": "metrics_recompute",
       "status": "pass"
     },
@@ -73,7 +73,7 @@
       "status": "pass"
     },
     {
-      "detail": "206 trades checked against ST/suspended/limit rules (6 universe names, 4576 price-limit observations)",
+      "detail": "206 trades checked against ST/suspended/limit rules (6 universe names, 206 price-limit observations)",
       "id": "forbidden_securities",
       "status": "pass",
       "warnings": []
@@ -119,28 +119,31 @@
     },
     "initial_capital": 100000000.0,
     "metrics": {
-      "annualized_excess_return": 0.22812522751449427,
-      "annualized_return": 0.20644878293313096,
-      "annualized_volatility": 0.11954829405869452,
-      "benchmark_cumulative_return": -0.06558219899368978,
-      "cumulative_return": 0.7876785136000002,
+      "annualized_excess_return": 0.23474959674550921,
+      "annualized_return": 0.21272214716321236,
+      "annualized_volatility": 0.12109391502811766,
+      "benchmark_cumulative_return": -0.0649680504311092,
+      "cumulative_return": 0.7890128962775309,
       "end_date": "2024-12-31",
-      "excess_cumulative_return": 0.9131468938999032,
-      "information_ratio": 1.0486564778384406,
+      "excess_cumulative_return": 0.913317397445488,
+      "information_ratio": 1.0715109949479267,
       "max_drawdown": -0.10365282809775644,
-      "n_days": 781,
-      "n_returns": 780,
-      "sharpe": 1.7269069756174937,
-      "start_date": "2022-01-04",
-      "tracking_error": 0.2175404742501767
+      "n_days": 761,
+      "n_returns": 760,
+      "sharpe": 1.7566708212697466,
+      "start_date": "2022-02-01",
+      "tracking_error": 0.21908276989441214
     },
+    "metrics_window_start": "2022-02-01",
+    "n_metric_days": 761,
     "n_valuation_days": 781,
     "nav_end": 1.7876785136000002,
     "nav_hash": "72bc289ac48f0602183f863ab0e2a639b521217fe54c166fe68f9a9d8d4f2555",
-    "nav_start": 1.0,
+    "nav_inception": 1.0,
+    "nav_start": 0.9992541234999998,
     "rebuild_issues": [],
     "reconciliation": {
-      "equity_curve_rows": 781,
+      "equity_curve_rows": 761,
       "holdings_dates": 35,
       "initial_capital": 100000000.0,
       "max_abs_cash_fraction": 0.004755687855813065,

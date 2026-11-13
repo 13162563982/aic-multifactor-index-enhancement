@@ -1,0 +1,42 @@
+default:
+  backend: ollama
+  model: qwen3.5:9b
+  base_url: http://127.0.0.1:11434
+  temperature: 0.1
+  top_p: 0.9
+  max_tokens: 1600
+  num_ctx: 16384
+  timeout_s: 180
+  think: false
+  format_json: true
+  keep_alive: 10m
+  retry:
+    attempts: 3
+    backoff_seconds:
+    - 0.5
+    - 1.0
+    - 2.0
+replay:
+  cache_dir: evidence/llm_cache
+  strict: true
+  record: false
+openai_compat:
+  base_url: ''
+  api_key_env: AICWF_LLM_API_KEY
+  model: ''
+  timeout_s: 120
+  use_response_format: false
+  retry:
+    attempts: 3
+    backoff_seconds:
+    - 1.0
+    - 2.0
+    - 4.0
+prompts:
+  dir: prompts
+  skill_dir: skills
+agent_loop:
+  max_tool_rounds: 3
+  max_retries_invalid_json: 2
+  repair_temperature: 0.0
+  max_read_chars: 12000

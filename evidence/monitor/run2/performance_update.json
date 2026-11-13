@@ -1,0 +1,23 @@
+{
+  "as_of": "2026-11-12",
+  "initial_capital": 100000000.0,
+  "performance": {
+    "active_drawdown": -0.016204415163302066,
+    "annualized_excess_return": -0.325191732305833,
+    "as_of": "2026-11-12",
+    "benchmark_return": 0.006723313744517512,
+    "excess_return": -0.009654386572531926,
+    "last_rebalance_date": "2026-11-02",
+    "method": "mark_to_market",
+    "n_days": 8,
+    "n_positions": 300,
+    "portfolio_return": -0.002995982297952393,
+    "realized_te": 0.08673778431535946,
+    "tracking_difference": -0.009654386572531926,
+    "window_end": "2026-11-12",
+    "window_start": "2026-11-02"
+  },
+  "previous_run_id": "final2-2026-11-12",
+  "run_id": "final2-2026-11-12",
+  "schema_version": "1.0.0"
+}

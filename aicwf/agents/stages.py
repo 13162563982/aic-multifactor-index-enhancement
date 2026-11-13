@@ -377,11 +377,19 @@ def _scrub_prompt_metadata(value: Any, *, depth: int = 0) -> Any:
     if depth > 8:
         return "<<nested content omitted>>"
     if isinstance(value, Mapping):
-        return {
-            str(key): _scrub_prompt_metadata(item, depth=depth + 1)
-            for key, item in value.items()
-            if str(key) not in _PROMPT_VOLATILE_KEYS
-        }
+        result: dict[str, Any] = {}
+        for key, item in value.items():
+            text_key = str(key)
+            if text_key in _PROMPT_VOLATILE_KEYS:
+                continue
+            if text_key == "artifact_hashes" and isinstance(item, Mapping):
+                # Hash maps contain the content hash of run-scoped artifacts (e.g.
+                # run_request.json embeds the run id), so they are run-specific by
+                # construction. Keep only the count as deterministic evidence.
+                result["artifact_hashes_count"] = len(item)
+                continue
+            result[text_key] = _scrub_prompt_metadata(item, depth=depth + 1)
+        return result
     if isinstance(value, (list, tuple)):
         return [_scrub_prompt_metadata(item, depth=depth + 1) for item in value]
     return value
@@ -733,7 +741,16 @@ def run_factor_review(ctx: RunContext) -> StageOutput:
         "factor_correlation_crowding_reference": 0.6,
     }
     allowed_numbers = build_allowed_numbers(
-        report_excerpt, hypothesis_weights, build_summary, data_quality_excerpt, thresholds
+        report_excerpt,
+        hypothesis_weights,
+        build_summary,
+        data_quality_excerpt,
+        thresholds,
+        # Accept every numeric leaf of the supplied artifacts (nested correlation
+        # matrices, per-factor detail maps, etc.), not just the bounded excerpt.
+        factor_report,
+        hypothesis_artifact or {},
+        data_quality,
     )
 
     def _factor_section(section: str, factor_id: str) -> Any:
@@ -953,6 +970,11 @@ def run_risk_review(ctx: RunContext) -> StageOutput:
         risk_excerpt,
         backtest_summary,
         robustness_summary,
+        # Full artifacts: every numeric leaf the verifier/robustness code produced.
+        metrics,
+        robustness if isinstance(robustness, Mapping) else {},
+        checks if isinstance(checks, list) else [],
+        risk_report or {},
     )
 
     def check_metric_lookup(args: dict[str, Any]) -> dict[str, Any]:
@@ -1772,6 +1794,17 @@ def run_report(ctx: RunContext) -> StageOutput:
         risk_budget,
         data_limitations,
         reporting_requirements,
+        # Full verified artifacts: the note may legitimately quote any number that the
+        # verified artifacts contain (including nested fields not in the bounded prompt).
+        verification,
+        metrics,
+        robustness if isinstance(robustness, Mapping) else {},
+        robustness_checks,
+        factor_report if isinstance(factor_report, Mapping) else {},
+        hypothesis,
+        risk_report or {},
+        data_quality if isinstance(data_quality, Mapping) else {},
+        pit_audit if isinstance(pit_audit, Mapping) else {},
     )
 
     def check_verified_number(args: dict[str, Any]) -> dict[str, Any]:

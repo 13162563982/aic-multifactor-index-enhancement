@@ -1,0 +1,215 @@
+{
+  "artifact_hashes": {
+    "00_intake/run_request.json": "1d112782f1598c43d98d6909e9ccc7a23752548d7c1812712b5e4e80ac3e85d9",
+    "01_hypothesis/hypothesis.json": "3d509353a878b4d88e4b008ea95a9d1368b851ede723e82a489ddbac0e72d211",
+    "01_hypothesis/rationale.md": "4ef039534936d6d5dc7c8599cf2a001db52496bb82a81684ddd030f3ba02416a",
+    "02_data/benchmark.parquet": "a0c36f89b11bb36dbd5154cd16647f44efb315a028ca7ae4a9eed170bb7e7bf8",
+    "02_data/data_quality.json": "80cfe7ac4ebd93410ab51a3c71550f0463e7d7f5c53bdaeaf2305ea30711c18e",
+    "02_data/panel.parquet": "8528ced1975e6b2e79fc0435a4fc4f2eb0414c93db5a99f1443d6b6d331bd172",
+    "02_data/pit_audit.json": "493dd9b6e0071dda7a73524e6d37b2b3c7452948da461a6253ac5f2e17b09eb1",
+    "03_factors/factor_panel.parquet": "381455305b7bf31a680d9e6568b8d5d7e91790d4a6f7bdc783d2524d8bc6a6f5",
+    "03_factors/factor_report.json": "7a9bf0010321bac5861ea6834e39ee7883509974145c0eaeecf6cd12b327f549",
+    "05_backtest/equity_curve.csv": "c39ed9f53a587a26ad3bf7210343a3e457b27412ad8cde329c80f96c8cfe0ca3",
+    "05_backtest/holdings.parquet": "42d5cf709c2c2057c0d17be901b138da10bfba6ca91dfb9edfd1ad56686a765e",
+    "05_backtest/ledger.parquet": "81e445fa94527b4dacb87f0d9ee5dc16599a90b81a449791ec7d9f0c2131bfd3",
+    "05_backtest/metrics.json": "097d2be2cd42ba6609b54ca4dfca3e575ea1678352bfadd1fb32ea6473e55de4",
+    "06_robustness/robustness.json": "9c224364655875d78c6ba09fe2522d43715a674c5022bb8106729081e98b176a",
+    "06_robustness/robustness_checks.json": "e655e06898dedc430b80788788fe47b713949b324bc84a710e2449859ed1da0a",
+    "08_portfolio/orders.csv": "3309ebbe4d61be7e99b9fcc1f1998bc67bd06341bc9fcc7a4092a02eac57888a",
+    "08_portfolio/risk_report.json": "07ab10522c440da9e0adb0c174d98e4268ba64a3155fcb3df5214241739330ab",
+    "08_portfolio/target_weights.parquet": "b60b81a669e264760904eba17e36a24e77d85b4a734016ecfc3612d9b29e8988"
+  },
+  "as_of": "2026-11-12",
+  "checks": [
+    {
+      "detail": "18/18 contract artifacts present, parseable and well-formed (1 warning(s): artifact 'ledger' has 117 duplicate (date, code) row(s))",
+      "id": "artifact_schema",
+      "status": "pass",
+      "warnings": [
+        "artifact 'ledger' has 117 duplicate (date, code) row(s)"
+      ]
+    },
+    {
+      "detail": "18 artifact content hashes computed and match declared hashes",
+      "id": "artifact_hashes",
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "detail": "21241 ledger rows reconciled across 106 holdings dates; cash and weights tie out",
+      "details": {
+        "equity_curve_rows": 2127,
+        "holdings_dates": 106,
+        "initial_capital": 100000000.0,
+        "max_abs_cash_fraction": 0.22741915057801146,
+        "min_cash": 3.9085906247782987,
+        "nav_rows_checked": 400,
+        "trade_rows": 21241
+      },
+      "id": "ledger_reconcile",
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "compared": [
+        "annualized_return",
+        "annualized_volatility",
+        "sharpe",
+        "max_drawdown",
+        "annualized_excess_return",
+        "tracking_error",
+        "information_ratio"
+      ],
+      "detail": "7 headline metrics and 4 benchmark metrics reproduced independently within relative tolerance 1e-06 (e.g. annualized_excess_return=0.1594039630443691, tracking_error=0.06161548923807644)",
+      "id": "metrics_recompute",
+      "status": "pass"
+    },
+    {
+      "detail": "all weights <= 0.03, |active| <= 0.015, no leverage and >= 60 names at every rebalance",
+      "id": "weights_bounds",
+      "status": "pass"
+    },
+    {
+      "detail": "industry active weights within +/-0.02 at every rebalance (max |industry active| 0.008947 on 2024-10-08 in 半导体)",
+      "id": "industry_neutrality",
+      "status": "pass"
+    },
+    {
+      "detail": "21241 trades checked against ST/suspended/limit rules (300 universe names, 21124 price-limit observations); 1 warning(s)",
+      "id": "forbidden_securities",
+      "status": "pass",
+      "warnings": [
+        "84 holding row(s) were suspended on the holding date (e.g. 002532.SZ on 2018-03-01)"
+      ]
+    },
+    {
+      "detail": "21241 trades respect T+1 settlement and the frozen trading calendar (2637 days)",
+      "id": "t1_tradability",
+      "status": "pass"
+    },
+    {
+      "detail": "all artifact dates <= as_of 2026-11-12; every ledger/holdings price equals the frozen same-date close",
+      "id": "pit_prices",
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "detail": "pit_audit clean (violations=[], max_panel_date=2026-11-12) and no fundamental row available after as_of 2026-11-12 was usable; 1 warning(s)",
+      "id": "pit_fundamentals",
+      "status": "pass",
+      "warnings": [
+        "snapshot contains 1 fundamentals announced after as_of 2026-11-12; they must not be used by data_prep (pit_audit reports no violations)"
+      ]
+    },
+    {
+      "detail": "numeric artifacts contain no wall-clock state; two independent rebuilds are byte-identical; run_request and metrics bind the same config_hash",
+      "id": "determinism_summary",
+      "status": "pass",
+      "warnings": []
+    }
+  ],
+  "discrepancies": [],
+  "recomputed": {
+    "benchmark_metrics": {
+      "annualized_return": 0.014766249075128579,
+      "annualized_volatility": 0.18836551979651964,
+      "cumulative_return": 0.16571002108348476,
+      "end_date": "2026-11-12",
+      "max_drawdown": -0.45602619548225387,
+      "n_days": 2637,
+      "n_returns": 2636,
+      "sharpe": 0.07839146512100359,
+      "start_date": "2016-01-04"
+    },
+    "initial_capital": 100000000.0,
+    "metrics": {
+      "annualized_excess_return": 0.1594039630443691,
+      "annualized_return": 0.15364363207679088,
+      "annualized_volatility": 0.17301175138425598,
+      "benchmark_cumulative_return": -0.04756897127533444,
+      "cumulative_return": 2.3393978517104914,
+      "end_date": "2026-11-12",
+      "excess_cumulative_return": 2.506183388609302,
+      "information_ratio": 2.5870761559394135,
+      "max_drawdown": -0.2353496409361694,
+      "n_days": 2127,
+      "n_returns": 2126,
+      "sharpe": 0.8880531573577979,
+      "start_date": "2018-02-01",
+      "tracking_error": 0.06161548923807644
+    },
+    "metrics_window_start": "2018-02-01",
+    "n_metric_days": 2127,
+    "n_valuation_days": 2637,
+    "nav_end": 3.337370868135217,
+    "nav_hash": "5a450258127a2b2c632f1cc3bac140060440b64eda8f6107394578b626aeaee1",
+    "nav_inception": 1.0,
+    "nav_start": 0.9993930092593681,
+    "rebuild_issues": [],
+    "reconciliation": {
+      "equity_curve_rows": 2127,
+      "holdings_dates": 106,
+      "initial_capital": 100000000.0,
+      "max_abs_cash_fraction": 0.22741915057801146,
+      "min_cash": 3.9085906247782987,
+      "nav_rows_checked": 400,
+      "trade_rows": 21241
+    },
+    "turnover": {
+      "annualized_two_way": 3.4368594325393396,
+      "average_one_way_per_rebalance": 0.14320247635580582,
+      "max_two_way_per_rebalance": 0.7725808494219886,
+      "trade_dates": 106
+    }
+  },
+  "run_id": "final2-2026-11-12",
+  "snapshot": {
+    "as_of": "2026-11-12",
+    "path": "data/snapshots/2026-11-12",
+    "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8"
+  },
+  "tolerances": {
+    "cash_absolute": 0.01,
+    "metrics_relative": 1e-06,
+    "weights_absolute": 1e-06
+  },
+  "verdict": "PASS",
+  "verifier": {
+    "blocking_checks": [
+      "artifact_schema",
+      "artifact_hashes",
+      "ledger_reconcile",
+      "weights_bounds",
+      "industry_neutrality",
+      "forbidden_securities",
+      "pit_fundamentals",
+      "pit_prices",
+      "determinism_summary",
+      "metrics_recompute",
+      "t1_tradability"
+    ],
+    "checks_failed": 0,
+    "checks_total": 11,
+    "failed_blocking_checks": [],
+    "failed_required_checks": [],
+    "implementation": "aicwf.verify (independent of aicwf.backtest/aicwf.portfolio)",
+    "llm_mode": "ollama",
+    "mode": "deterministic_recompute",
+    "name": "independent-verifier",
+    "notes": [
+      "verified 6 frozen snapshot file hashes"
+    ],
+    "required_checks": [
+      "artifact_schema",
+      "artifact_hashes",
+      "ledger_reconcile",
+      "weights_bounds",
+      "industry_neutrality",
+      "forbidden_securities",
+      "pit_fundamentals",
+      "pit_prices",
+      "determinism_summary"
+    ],
+    "version": "1.0.0"
+  }
+}

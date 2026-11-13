@@ -1,0 +1,98 @@
+[
+  {
+    "stage": "intake",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "9f6dd20160c4ac7892c4ebdf1b54868c22224f7f9a99af4f27060d61cdf3461a",
+    "output_hash": "fbbf6ed7a8f0492f28440e86d5e0c8cdab0a6b54430c75df29809f45288a5549"
+  },
+  {
+    "stage": "hypothesis",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "da981740a916e38f894dd83ce4ac46254de9dd1b38f09ded2ecbe026ec0ac83a",
+    "output_hash": "aaa849b57305b8fc143eaf033a60d2fe3f2c3a85b82ecafe99e46f40b1c071ef"
+  },
+  {
+    "stage": "data_prep",
+    "status": "completed",
+    "attempt": 2,
+    "disposition": "skipped_completed",
+    "input_hash": "1f01f924961418575fac22a571ab4a0e708648f824a352fb8be153d9216a2708",
+    "output_hash": "dc90fe857e94576caa739cea84cc1fbca9364598d7d5bc4d74de028094340ee5"
+  },
+  {
+    "stage": "factor_build",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "4342eb39bb2962834dcde751e9c9f972eb3d0671c4bc7cc507b5805457d76727",
+    "output_hash": "f30df639e10353e1d27a922c0e0a752039d8c4992c2cd4ea4506c39e728f5708"
+  },
+  {
+    "stage": "factor_review",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "746243c6db3ec44df2657ee0304ea215435bbce08762db6a14941ee0b91a3d93",
+    "output_hash": "3f9a701face9fd9d1c33b0491b505656b8074c2a24f3c5dc08ec38a05f3fa03a"
+  },
+  {
+    "stage": "backtest",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "6e6bed916abec747f7dd46ca308db77ae5457d5dcd65c5a5bfcd6b4f9f0d73f5",
+    "output_hash": "5938495c5173b1b9a5376a051c7ea31996d30090cc7f91b916c54681b42765ba"
+  },
+  {
+    "stage": "robustness",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "9b89cda402f571e85ab1e32a8c9458e5df8bd3b75216b6e4aa8abbe211237f7a",
+    "output_hash": "6ca50b22faeb8ccd8d02888cb99fb82121c07b6284425a7225ad35ba0bf64a78"
+  },
+  {
+    "stage": "robustness_review",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "767632d99c484fa05545c30355aea3c7a8ec7d0ba70375f496243f51648623c7",
+    "output_hash": "26729efd8e537a950a7e8035ee00fad7577695ad093cffa50cd949d541549ea7"
+  },
+  {
+    "stage": "portfolio",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "743a33137e2b9e72bce31bed9234c61d1b3461a13f723fdfe761aa069a9a9d88",
+    "output_hash": "4bfe465efe6d98ffb01fdae69518bbf9f6bfa623d35165e772dca7ed21128874"
+  },
+  {
+    "stage": "verification",
+    "status": "completed",
+    "attempt": 1,
+    "disposition": "skipped_completed",
+    "input_hash": "ebaf3c830806b5ec4603592d5c8c815d0bab3ff252871aef75256c5e9004d3ac",
+    "output_hash": "c571c1da4bfb5966111201bcb7ad3baee2900b3bfb59a4ad151f29e3cd96305b"
+  },
+  {
+    "stage": "report",
+    "status": "completed",
+    "attempt": 2,
+    "disposition": "executed",
+    "input_hash": "afaa965a5cd3783f11430b41a98cc2a656592d5e16b44724bf361913c64f3f1a",
+    "output_hash": "5f738bb3f16a21526e04e583d8a6da1febaf2e550a595b1461c1691c5df4079a"
+  },
+  {
+    "stage": "approval",
+    "status": "blocked",
+    "attempt": 0,
+    "disposition": "awaiting_approval",
+    "input_hash": null,
+    "output_hash": null
+  }
+]

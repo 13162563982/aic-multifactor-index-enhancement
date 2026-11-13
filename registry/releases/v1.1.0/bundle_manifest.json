@@ -1,0 +1,47 @@
+{
+  "bundle_hash": "7e0b0454976dc25f62c6ea48f85753a327898da4fca90692359adee6368c71e9",
+  "config_hash": "2e12ab67f64da85b7f171a4d03deed7c08c730f74e130ed99348be0ce00159ce",
+  "config_hashes": {
+    "config/budgets.yaml": "968c09c18114680874817a35d2882d14f0b333b5240ad7feee6a5278a3bcd99f",
+    "config/data.yaml": "cc9f824f252287ff819d2cf572151653c3e437f8f0e9455b1f1c1e7d7dfc5a92",
+    "config/gates.yaml": "35af49714f8c81060ab9ad58774aa1486dd05fe9a924f99a29535fc8361381ea",
+    "config/model.yaml": "498e051a010c267d2e0a363e8a3114ddfc458eeb076829b5f3a26c3b69c131c3",
+    "config/strategy.yaml": "5ff57b6dfb420ce95071e0dad3505354c1f29269e0dc4368080587133377be28",
+    "config/workflow.yaml": "52a8dbcbaa845d17eb16dc5235724312731b95da654cbad5b9a46182ca6ae8cb"
+  },
+  "created_at_utc": "2026-11-13T04:31:00+00:00",
+  "files": {
+    "config/budgets.yaml": "968c09c18114680874817a35d2882d14f0b333b5240ad7feee6a5278a3bcd99f",
+    "config/data.yaml": "cc9f824f252287ff819d2cf572151653c3e437f8f0e9455b1f1c1e7d7dfc5a92",
+    "config/gates.yaml": "35af49714f8c81060ab9ad58774aa1486dd05fe9a924f99a29535fc8361381ea",
+    "config/model.yaml": "498e051a010c267d2e0a363e8a3114ddfc458eeb076829b5f3a26c3b69c131c3",
+    "config/strategy.yaml": "5ff57b6dfb420ce95071e0dad3505354c1f29269e0dc4368080587133377be28",
+    "config/workflow.yaml": "52a8dbcbaa845d17eb16dc5235724312731b95da654cbad5b9a46182ca6ae8cb",
+    "prompts/factor_analyst.md": "416942709fc3253de9903e7cba377607962fb1a1b03e48bafa4a831cbce55088",
+    "prompts/report_writer.md": "0f8a17378704c414df12a15ad39a689c0dd97d92f9dbf86399682c5466452369",
+    "prompts/researcher.md": "44471b5b00f027a8757919e44227bc1752ddd4cdc74e30dba8f0823c40afef1d",
+    "prompts/risk_critic.md": "e858d463bcc7d0f676b6c36a0d4baaa9e53a44655fc9847ac00fe5e425df89a9",
+    "prompts/verifier.md": "7c5027318d0dbdc0bf864cc55070aa6d8a6f542934abbb6d2b81745d3505951a",
+    "skills/factor_diagnostics/SKILL.md": "730f29248afd090e4d5559e202b1f4bd23bfb632e70b9d3d41eca656360805f2",
+    "skills/hypothesis_spec/SKILL.md": "65ded78e419d10234085ae8fdae1ca0f3dd607f8fab305a878c1b2b8fd4846c9",
+    "skills/pit_and_cutoff/SKILL.md": "8e6e15f42370d47fb4180c908770dfafececbabb4f7264d1dc9b3642b09cdaa0",
+    "skills/report_template/SKILL.md": "4881959eff0b88b7b0630be00667c7f23cf3866015db735d92e03a510d008437",
+    "skills/risk_review/SKILL.md": "78957f8fde4bcd98594ae5049a03affe3ccbba51186d9891d8f300688bde8126"
+  },
+  "prompt_hashes": {
+    "prompts/factor_analyst.md": "416942709fc3253de9903e7cba377607962fb1a1b03e48bafa4a831cbce55088",
+    "prompts/report_writer.md": "0f8a17378704c414df12a15ad39a689c0dd97d92f9dbf86399682c5466452369",
+    "prompts/researcher.md": "44471b5b00f027a8757919e44227bc1752ddd4cdc74e30dba8f0823c40afef1d",
+    "prompts/risk_critic.md": "e858d463bcc7d0f676b6c36a0d4baaa9e53a44655fc9847ac00fe5e425df89a9",
+    "prompts/verifier.md": "7c5027318d0dbdc0bf864cc55070aa6d8a6f542934abbb6d2b81745d3505951a"
+  },
+  "schema_version": "1.0.0",
+  "skill_hashes": {
+    "skills/factor_diagnostics/SKILL.md": "730f29248afd090e4d5559e202b1f4bd23bfb632e70b9d3d41eca656360805f2",
+    "skills/hypothesis_spec/SKILL.md": "65ded78e419d10234085ae8fdae1ca0f3dd607f8fab305a878c1b2b8fd4846c9",
+    "skills/pit_and_cutoff/SKILL.md": "8e6e15f42370d47fb4180c908770dfafececbabb4f7264d1dc9b3642b09cdaa0",
+    "skills/report_template/SKILL.md": "4881959eff0b88b7b0630be00667c7f23cf3866015db735d92e03a510d008437",
+    "skills/risk_review/SKILL.md": "78957f8fde4bcd98594ae5049a03affe3ccbba51186d9891d8f300688bde8126"
+  },
+  "version": "v1.1.0"
+}

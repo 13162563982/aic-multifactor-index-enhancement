@@ -1,0 +1,40 @@
+{
+  "alerts": [
+    {
+      "id": "tracking_error_alert",
+      "message": "realized tracking error 0.0867 exceeds the alert threshold 0.0800",
+      "severity": "warn",
+      "threshold": 0.08,
+      "value": 0.08673778431535946
+    }
+  ],
+  "as_of": "2026-11-12",
+  "counts": {
+    "alerts": 1,
+    "critical": 0,
+    "warn": 1
+  },
+  "monitor_id": "monitor-2026-11-12",
+  "previous_snapshot_hash": null,
+  "run_id": "final2-2026-11-12",
+  "schema_version": "1.0.0",
+  "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+  "thresholds": {
+    "data_staleness_days": 3.0,
+    "excess_drawdown_alert": 0.1,
+    "ic_decay_absolute_alert": 0.05,
+    "ic_decay_alert": -0.05,
+    "industry_active_limit": 0.02,
+    "min_coverage": 0.9,
+    "te_alert": 0.08,
+    "te_stop_level": 0.16,
+    "te_stop_multiple": 2.0
+  },
+  "trigger": {
+    "new_data": false,
+    "previous_snapshot_hash": null,
+    "snapshot_hash": "8ab22713074fcfef89f9e1fd25116536c53e3a8f385adbadcf4e41c154c125c8",
+    "type": "scheduled"
+  },
+  "verdict": "alert"
+}

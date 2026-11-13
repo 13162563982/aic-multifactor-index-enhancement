@@ -371,12 +371,15 @@ def test_prompts_are_run_metadata_invariant(tmp_path: Path) -> None:
         verification = verification_payload()
         verification["run_id"] = run_id
         verification["verifier"]["llm_mode"] = mode
+        # Run-scoped artifact hashes (run_request.json embeds the run id) must not leak.
+        verification["artifact_hashes"]["00_intake/run_request.json"] = f"{index}" * 64
         write_json(ctx.artifact_path("verification", "verification.json"), verification)
         run_report(ctx)
         prompts.append(ctx.llm.calls[0]["user"])
     assert prompts[0] == prompts[1]
     assert "test-run" not in prompts[0]
     assert "other-run" not in prompts[1]
+    assert "artifact_hashes_count" in prompts[0]
 
     # Verifier note prompt must be run-metadata invariant too.
     note_prompts: list[str] = []
@@ -385,6 +388,7 @@ def test_prompts_are_run_metadata_invariant(tmp_path: Path) -> None:
         verification = verification_payload()
         verification["run_id"] = run_id
         verification["verifier"]["llm_mode"] = mode
+        verification["artifact_hashes"]["00_intake/run_request.json"] = f"{index}" * 64
         generate_verifier_note(ctx, verification)
         note_prompts.append(ctx.llm.calls[0]["user"])
     assert note_prompts[0] == note_prompts[1]

@@ -1,0 +1,577 @@
+{
+  "baseline": {
+    "metrics": {
+      "annualized_return": 0.1536436321,
+      "annualized_excess_return": 0.159403963,
+      "tracking_error": 0.0616154892,
+      "information_ratio": 2.5870761559,
+      "sharpe": 0.8880531574,
+      "max_drawdown": -0.2353496409,
+      "n_returns": 2126
+    },
+    "n_rebalances": 106,
+    "information_ratio": 2.5870761559
+  },
+  "subperiods": [
+    {
+      "start": "2018-01-02",
+      "end": "2020-12-31",
+      "metrics": {
+        "annualized_return": 0.1664559853,
+        "annualized_excess_return": 0.0906992453,
+        "tracking_error": 0.0433064813,
+        "information_ratio": 2.0943573016,
+        "sharpe": 0.8017045265,
+        "max_drawdown": -0.2353496409,
+        "n_returns": 707
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": -0.0687047178,
+        "information_ratio": -0.4927188543,
+        "tracking_error": -0.018309008,
+        "sharpe": -0.0863486308
+      },
+      "n_rebalances": 36
+    },
+    {
+      "start": "2021-01-04",
+      "end": "2023-12-29",
+      "metrics": {
+        "annualized_return": 0.0626942889,
+        "annualized_excess_return": 0.2131392533,
+        "tracking_error": 0.0705125092,
+        "information_ratio": 3.0227154808,
+        "sharpe": 0.4279090667,
+        "max_drawdown": -0.1729798696,
+        "n_returns": 706
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0537352902,
+        "information_ratio": 0.4356393249,
+        "tracking_error": 0.00889702,
+        "sharpe": -0.4601440907
+      },
+      "n_rebalances": 36
+    },
+    {
+      "start": "2024-01-02",
+      "end": "2026-11-12",
+      "metrics": {
+        "annualized_return": 0.2508599134,
+        "annualized_excess_return": 0.1609567029,
+        "tracking_error": 0.0676080242,
+        "information_ratio": 2.3807337205,
+        "sharpe": 1.5928588531,
+        "max_drawdown": -0.1010915528,
+        "n_returns": 669
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0015527399,
+        "information_ratio": -0.2063424354,
+        "tracking_error": 0.0059925349,
+        "sharpe": 0.7048056957
+      },
+      "n_rebalances": 34
+    }
+  ],
+  "cost_sensitivity": [
+    {
+      "multiplier": 0.0,
+      "metrics": {
+        "annualized_return": 0.1577478704,
+        "annualized_excess_return": 0.1635082014,
+        "tracking_error": 0.0616246089,
+        "information_ratio": 2.6532939416,
+        "sharpe": 0.9114925471,
+        "max_drawdown": -0.2326247373,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0041042383,
+        "information_ratio": 0.0662177856,
+        "tracking_error": 9.1196e-06,
+        "sharpe": 0.0234393897
+      }
+    },
+    {
+      "multiplier": 1.0,
+      "metrics": {
+        "annualized_return": 0.1536436321,
+        "annualized_excess_return": 0.159403963,
+        "tracking_error": 0.0616154892,
+        "information_ratio": 2.5870761559,
+        "sharpe": 0.8880531574,
+        "max_drawdown": -0.2353496409,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0,
+        "information_ratio": 0.0,
+        "tracking_error": 0.0,
+        "sharpe": 0.0
+      }
+    },
+    {
+      "multiplier": 3.0,
+      "metrics": {
+        "annualized_return": 0.1454037142,
+        "annualized_excess_return": 0.1511640452,
+        "tracking_error": 0.0616343245,
+        "information_ratio": 2.4525951489,
+        "sharpe": 0.8407689706,
+        "max_drawdown": -0.240571883,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": -0.0082399178,
+        "information_ratio": -0.134481007,
+        "tracking_error": 1.88352e-05,
+        "sharpe": -0.0472841868
+      }
+    }
+  ],
+  "leave_one_out": {
+    "low_vol_60d": {
+      "weight": -0.25,
+      "metrics": {
+        "annualized_return": 0.1663550681,
+        "annualized_excess_return": 0.172115399,
+        "tracking_error": 0.0583642518,
+        "information_ratio": 2.948986644,
+        "sharpe": 0.9245423009,
+        "max_drawdown": -0.2393924735,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.012711436,
+        "information_ratio": 0.361910488,
+        "tracking_error": -0.0032512374,
+        "sharpe": 0.0364891435
+      }
+    },
+    "momentum_12_1": {
+      "weight": 0.25,
+      "metrics": {
+        "annualized_return": 0.1565970409,
+        "annualized_excess_return": 0.1623573719,
+        "tracking_error": 0.0646439886,
+        "information_ratio": 2.5115617909,
+        "sharpe": 0.9146084682,
+        "max_drawdown": -0.2244743931,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0029534088,
+        "information_ratio": -0.0755143651,
+        "tracking_error": 0.0030284994,
+        "sharpe": 0.0265553109
+      }
+    },
+    "quality_cashflow": {
+      "weight": 0.25,
+      "metrics": {
+        "annualized_return": 0.1537921617,
+        "annualized_excess_return": 0.1595524927,
+        "tracking_error": 0.0618052303,
+        "information_ratio": 2.5815370617,
+        "sharpe": 0.8948642624,
+        "max_drawdown": -0.2302933998,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0001485297,
+        "information_ratio": -0.0055390943,
+        "tracking_error": 0.0001897411,
+        "sharpe": 0.006811105
+      }
+    },
+    "value_ep": {
+      "weight": 0.25,
+      "metrics": {
+        "annualized_return": 0.1483938599,
+        "annualized_excess_return": 0.1541541909,
+        "tracking_error": 0.0603983232,
+        "information_ratio": 2.5522925599,
+        "sharpe": 0.8582410121,
+        "max_drawdown": -0.2379360932,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": -0.0052497722,
+        "information_ratio": -0.034783596,
+        "tracking_error": -0.0012171661,
+        "sharpe": -0.0298121453
+      }
+    }
+  },
+  "parameter_grid": [
+    {
+      "te_target": 0.03,
+      "rebalance": "monthly",
+      "metrics": {
+        "annualized_return": 0.1536436321,
+        "annualized_excess_return": 0.159403963,
+        "tracking_error": 0.0616154892,
+        "information_ratio": 2.5870761559,
+        "sharpe": 0.8880531574,
+        "max_drawdown": -0.2353496409,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0,
+        "information_ratio": 0.0,
+        "tracking_error": 0.0,
+        "sharpe": 0.0
+      }
+    },
+    {
+      "te_target": 0.03,
+      "rebalance": "quarterly",
+      "metrics": {
+        "annualized_return": 0.1578684443,
+        "annualized_excess_return": 0.1636287752,
+        "tracking_error": 0.0625663615,
+        "information_ratio": 2.6152835389,
+        "sharpe": 0.8992502949,
+        "max_drawdown": -0.2127137624,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0042248122,
+        "information_ratio": 0.028207383,
+        "tracking_error": 0.0009508722,
+        "sharpe": 0.0111971375
+      }
+    },
+    {
+      "te_target": 0.05,
+      "rebalance": "monthly",
+      "metrics": {
+        "annualized_return": 0.1504940045,
+        "annualized_excess_return": 0.1562543355,
+        "tracking_error": 0.0628619682,
+        "information_ratio": 2.4856736109,
+        "sharpe": 0.8723190141,
+        "max_drawdown": -0.2323188861,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": -0.0031496276,
+        "information_ratio": -0.1014025451,
+        "tracking_error": 0.001246479,
+        "sharpe": -0.0157341432
+      }
+    },
+    {
+      "te_target": 0.05,
+      "rebalance": "quarterly",
+      "metrics": {
+        "annualized_return": 0.1547513715,
+        "annualized_excess_return": 0.1605117024,
+        "tracking_error": 0.0634635164,
+        "information_ratio": 2.5291964815,
+        "sharpe": 0.8835599911,
+        "max_drawdown": -0.2059336781,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 0.0011077394,
+        "information_ratio": -0.0578796744,
+        "tracking_error": 0.0018480272,
+        "sharpe": -0.0044931662
+      }
+    },
+    {
+      "te_target": 0.07,
+      "rebalance": "monthly",
+      "metrics": {
+        "annualized_return": 0.1499890685,
+        "annualized_excess_return": 0.1557493995,
+        "tracking_error": 0.06328604,
+        "information_ratio": 2.4610387948,
+        "sharpe": 0.868681455,
+        "max_drawdown": -0.2324410855,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": -0.0036545635,
+        "information_ratio": -0.1260373612,
+        "tracking_error": 0.0016705507,
+        "sharpe": -0.0193717024
+      }
+    },
+    {
+      "te_target": 0.07,
+      "rebalance": "quarterly",
+      "metrics": {
+        "annualized_return": 0.1536588206,
+        "annualized_excess_return": 0.1594191516,
+        "tracking_error": 0.0636736037,
+        "information_ratio": 2.5036929339,
+        "sharpe": 0.8764199457,
+        "max_drawdown": -0.2023589613,
+        "n_returns": 2126
+      },
+      "delta_vs_baseline": {
+        "annualized_excess_return": 1.51886e-05,
+        "information_ratio": -0.083383222,
+        "tracking_error": 0.0020581144,
+        "sharpe": -0.0116332116
+      }
+    }
+  ],
+  "placebo": {
+    "repetitions": 20,
+    "seed": 0,
+    "baseline_information_ratio": 2.5870761559,
+    "placebo_information_ratio_mean": 2.7883243963,
+    "placebo_information_ratio_std": 0.0845072759,
+    "placebo_information_ratio_max": 2.9786438694,
+    "p_value": 1.0,
+    "placebo_samples": [
+      2.7695449605,
+      2.7817414828,
+      2.698919128,
+      2.6767039649,
+      2.8652691149,
+      2.7685116004,
+      2.9323496909,
+      2.8383153413,
+      2.9235286044,
+      2.7705236947,
+      2.7323997585,
+      2.9786438694,
+      2.8055057437,
+      2.6760438955,
+      2.6890497638,
+      2.7476630279,
+      2.8067381214,
+      2.7438087891,
+      2.7962284108,
+      2.7649989637
+    ]
+  },
+  "bias_stress": {
+    "levels": [
+      {
+        "k": 15,
+        "dropped": [
+          "300502.SZ",
+          "300308.SZ",
+          "603986.SH",
+          "002371.SZ",
+          "002837.SZ",
+          "002916.SZ",
+          "300661.SZ",
+          "002463.SZ",
+          "300394.SZ",
+          "603893.SH",
+          "600183.SH",
+          "300476.SZ",
+          "601100.SH",
+          "300750.SZ",
+          "605117.SH"
+        ],
+        "metrics": {
+          "annualized_return": 0.1293860117,
+          "annualized_excess_return": 0.1351463427,
+          "tracking_error": 0.0665904984,
+          "information_ratio": 2.0295139093,
+          "sharpe": 0.766571644,
+          "max_drawdown": -0.2528077521,
+          "n_returns": 2126
+        },
+        "delta_vs_baseline": {
+          "annualized_excess_return": -0.0242576203,
+          "information_ratio": -0.5575622466,
+          "tracking_error": 0.0049750091,
+          "sharpe": -0.1214815133
+        }
+      },
+      {
+        "k": 30,
+        "dropped": [
+          "300502.SZ",
+          "300308.SZ",
+          "603986.SH",
+          "002371.SZ",
+          "002837.SZ",
+          "002916.SZ",
+          "300661.SZ",
+          "002463.SZ",
+          "300394.SZ",
+          "603893.SH",
+          "600183.SH",
+          "300476.SZ",
+          "601100.SH",
+          "300750.SZ",
+          "605117.SH",
+          "603259.SH",
+          "688072.SH",
+          "600809.SH",
+          "603501.SH",
+          "002714.SZ",
+          "601225.SH",
+          "002028.SZ",
+          "300803.SZ",
+          "601899.SH",
+          "002475.SZ",
+          "300274.SZ",
+          "600519.SH",
+          "002384.SZ",
+          "688506.SH",
+          "600188.SH"
+        ],
+        "metrics": {
+          "annualized_return": 0.1191712829,
+          "annualized_excess_return": 0.1249316139,
+          "tracking_error": 0.0714778741,
+          "information_ratio": 1.7478361734,
+          "sharpe": 0.7082879382,
+          "max_drawdown": -0.2553172861,
+          "n_returns": 2126
+        },
+        "delta_vs_baseline": {
+          "annualized_excess_return": -0.0344723492,
+          "information_ratio": -0.8392399825,
+          "tracking_error": 0.0098623848,
+          "sharpe": -0.1797652192
+        }
+      }
+    ],
+    "drop_top_k": 30,
+    "winners": [
+      "300502.SZ",
+      "300308.SZ",
+      "603986.SH",
+      "002371.SZ",
+      "002837.SZ",
+      "002916.SZ",
+      "300661.SZ",
+      "002463.SZ",
+      "300394.SZ",
+      "603893.SH",
+      "600183.SH",
+      "300476.SZ",
+      "601100.SH",
+      "300750.SZ",
+      "605117.SH",
+      "603259.SH",
+      "688072.SH",
+      "600809.SH",
+      "603501.SH",
+      "002714.SZ",
+      "601225.SH",
+      "002028.SZ",
+      "300803.SZ",
+      "601899.SH",
+      "002475.SZ",
+      "300274.SZ",
+      "600519.SH",
+      "002384.SZ",
+      "688506.SH",
+      "600188.SH"
+    ]
+  },
+  "deflated_sharpe": {
+    "sharpe_annual": 0.8880531574,
+    "sharpe_daily": 0.0575054477,
+    "expected_max_sharpe_daily": 0.0201449672,
+    "deflated_sharpe": 0.9563966492,
+    "z_statistic": 1.7103200742,
+    "n_trials": 38,
+    "n_observations": 2126,
+    "skew": -0.1265627505,
+    "kurtosis": 9.1057470431,
+    "trial_sharpe_std_annual": 0.1474279203
+  },
+  "checks": [
+    {
+      "name": "subperiod_consistency",
+      "status": "pass",
+      "value": 1.0,
+      "threshold": 0.66,
+      "detail": "3/3 subperiods have positive annualized excess return"
+    },
+    {
+      "name": "cost_sensitivity_3x",
+      "status": "pass",
+      "value": 0.1511640452,
+      "threshold": 0.0,
+      "detail": "annualized excess return with 3x transaction costs is 0.1512"
+    },
+    {
+      "name": "leave_one_out",
+      "status": "pass",
+      "value": 2.5115617909,
+      "threshold": 0.0,
+      "detail": "worst leave-one-factor-out information ratio is 2.5116 over 4 variants"
+    },
+    {
+      "name": "parameter_grid_stability",
+      "status": "pass",
+      "value": 1.0,
+      "threshold": 0.6,
+      "detail": "6/6 parameter combinations keep a positive annualized excess return"
+    },
+    {
+      "name": "placebo_significance",
+      "status": "fail",
+      "value": 1.0,
+      "threshold": 0.1,
+      "detail": "seeded random-score placebo p-value is 1.0000 over 20 repetitions"
+    },
+    {
+      "name": "survivorship_bias_stress",
+      "status": "pass",
+      "value": 0.1249316139,
+      "threshold": 0.0,
+      "detail": "annualized excess return after removing the top full-period index winners (k=30) is 0.1249"
+    },
+    {
+      "name": "deflated_sharpe",
+      "status": "pass",
+      "value": 0.9563966492,
+      "threshold": 0.95,
+      "detail": "deflated Sharpe ratio 0.9564 with 38 trials and 2126 observations"
+    }
+  ],
+  "summary": {
+    "pass": [
+      "subperiod_consistency",
+      "cost_sensitivity_3x",
+      "leave_one_out",
+      "parameter_grid_stability",
+      "survivorship_bias_stress",
+      "deflated_sharpe"
+    ],
+    "concerns": [
+      "placebo_significance: seeded random-score placebo p-value is 1.0000 over 20 repetitions"
+    ],
+    "n_pass": 6,
+    "n_fail": 1
+  },
+  "seed": 0,
+  "thresholds": {
+    "subperiod_pass_share": 0.66,
+    "cost_3x_excess_min": 0.0,
+    "loo_min_information_ratio": 0.0,
+    "grid_positive_share": 0.6,
+    "placebo_p_value_max": 0.1,
+    "bias_stress_excess_min": 0.0,
+    "dsr_min": 0.95
+  },
+  "warnings": [],
+  "composite_weights": {
+    "value_ep": 0.25,
+    "quality_cashflow": 0.25,
+    "momentum_12_1": 0.25,
+    "low_vol_60d": -0.25
+  },
+  "constraints": {
+    "max_weight": 0.03,
+    "max_active_weight": 0.015,
+    "te_target": 0.03,
+    "turnover_limit": 0.3
+  }
+}

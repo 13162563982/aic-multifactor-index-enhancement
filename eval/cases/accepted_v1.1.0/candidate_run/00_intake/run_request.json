@@ -8,7 +8,7 @@
     "max_wall_seconds": 900
   },
   "candidate_version": "v1.1.0",
-  "config_hash": "d1c85959932b16303597c6ef8dc24508b81a40abff5920375e5106866470f72e",
+  "config_hash": "1820221d353e71b75ccf081c3e70491427b2c59ed1756e6bd875bbb8b636c8cb",
   "llm_mode": "replay",
   "run_id": "demo-accepted-2024-12-31",
   "seed": 0,
